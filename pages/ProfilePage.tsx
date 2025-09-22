@@ -1,8 +1,98 @@
+import React, { useState, useEffect } from 'react';
+import { Link, useParams, useNavigate } from 'react-router-dom';
+import { databases, storage, account, AppwriteConfig } from '../lib/appwrite';
+import { Models } from 'appwrite';
 
-import React from 'react';
-import { Link } from 'react-router-dom';
+// FIX: Add admin_photoId to the interface to match the data structure and remove @ts-ignore.
+interface SchoolData extends Models.Document {
+    name: string;
+    center_number: string;
+    contact: string;
+    region: string;
+    district: string;
+    badgeId?: string;
+    admin_name: string;
+    admin_role: string;
+    admin_photoId?: string;
+}
 
 const ProfilePage: React.FC = () => {
+    const { schoolId } = useParams<{ schoolId: string }>();
+    const navigate = useNavigate();
+    const [schoolData, setSchoolData] = useState<SchoolData | null>(null);
+    const [badgeUrl, setBadgeUrl] = useState<string | null>(null);
+    const [photoUrl, setPhotoUrl] = useState<string | null>(null);
+    const [loading, setLoading] = useState(true);
+    const [error, setError] = useState<string | null>(null);
+
+    useEffect(() => {
+        const fetchProfile = async () => {
+            try {
+                // Check if user is authenticated
+                await account.get();
+                
+                if (!schoolId) {
+                    throw new Error("School ID is missing.");
+                }
+
+                // FIX: Use generic type with getDocument to avoid unsafe casting.
+                const data = await databases.getDocument<SchoolData>(
+                    AppwriteConfig.databaseId,
+                    AppwriteConfig.schoolCollectionId,
+                    schoolId
+                );
+
+                setSchoolData(data);
+
+                if (data.badgeId) {
+                    const url = storage.getFilePreview(AppwriteConfig.schoolBadgesBucketId, data.badgeId);
+                    // FIX: Use toString() as getFilePreview returns a URL object, and its string representation is needed. This also handles cases where it might return a string.
+                    setBadgeUrl(url.toString());
+                }
+                
+                // Assuming admin_photoId exists in your document
+                if (data.admin_photoId) {
+                    const url = storage.getFilePreview(AppwriteConfig.adminProfilePhotosBucketId, data.admin_photoId);
+                    // FIX: Use toString() for consistency and correctness.
+                    setPhotoUrl(url.toString());
+                }
+
+            } catch (e: any) {
+                console.error("Failed to fetch profile:", e);
+                // If not authenticated, redirect to sign-in
+                if (e.code === 401) {
+                    navigate('/signin');
+                } else {
+                    setError(e.message || "Could not load profile data.");
+                }
+            } finally {
+                setLoading(false);
+            }
+        };
+
+        fetchProfile();
+    }, [schoolId, navigate]);
+
+    if (loading) {
+        return (
+            <div className="min-h-screen flex items-center justify-center">
+                <div className="animate-spin rounded-full h-32 w-32 border-t-2 border-b-2 border-primary-red"></div>
+            </div>
+        );
+    }
+
+    if (error) {
+        return (
+            <div className="min-h-screen flex items-center justify-center text-center">
+                <div>
+                    <h2 className="text-2xl font-bold text-red-500">Error</h2>
+                    <p className="text-gray-600">{error}</p>
+                    <Link to="/" className="mt-4 inline-block bg-primary-red text-white font-bold py-2 px-4 rounded">Go to Homepage</Link>
+                </div>
+            </div>
+        );
+    }
+
     return (
         <>
             <section className="bg-gradient-to-r from-primary-red to-dark-red text-white text-center py-24">
@@ -16,20 +106,21 @@ const ProfilePage: React.FC = () => {
                         <div>
                             <h3 className="text-xl font-bold text-primary-red border-b pb-2 mb-4">School Information</h3>
                             <div className="grid md:grid-cols-2 gap-4 text-gray-700">
-                                <p><strong>School Name:</strong> Example High School</p>
-                                <p><strong>Centre Number:</strong> U001</p>
-                                <p><strong>Email:</strong> school@example.com</p>
-                                <p><strong>Contact:</strong> +256 700 000 000</p>
-                                <p><strong>Region:</strong> Central</p>
-                                <p><strong>District:</strong> Kampala</p>
+                                <p><strong>School Name:</strong> {schoolData?.name}</p>
+                                <p><strong>Centre Number:</strong> {schoolData?.center_number}</p>
+                                <p><strong>Contact:</strong> {schoolData?.contact}</p>
+                                <p><strong>Region:</strong> {schoolData?.region}</p>
+                                <p><strong>District:</strong> {schoolData?.district}</p>
                             </div>
+                            {badgeUrl && <div className="mt-4"><p className="font-semibold">School Badge:</p><img src={badgeUrl} alt="School Badge" className="h-20 mt-2 rounded" /></div>}
                         </div>
                         <div>
                             <h3 className="text-xl font-bold text-primary-red border-b pb-2 mb-4">Representative Information</h3>
                              <div className="grid md:grid-cols-2 gap-4 text-gray-700">
-                                <p><strong>Full Name:</strong> John Doe</p>
-                                <p><strong>Role:</strong> Sports Coordinator</p>
+                                <p><strong>Full Name:</strong> {schoolData?.admin_name}</p>
+                                <p><strong>Role:</strong> {schoolData?.admin_role}</p>
                              </div>
+                             {photoUrl && <div className="mt-4"><p className="font-semibold">Profile Photo:</p><img src={photoUrl} alt="Admin" className="h-20 w-20 mt-2 rounded-full object-cover" /></div>}
                         </div>
                          <div>
                             <h3 className="text-xl font-bold text-primary-red border-b pb-2 mb-4">Registered Players</h3>
@@ -47,9 +138,9 @@ const ProfilePage: React.FC = () => {
                                 <Link to="/player-registration" className="block w-full text-center bg-primary-red text-white font-bold py-2 px-4 rounded-lg hover:bg-dark-red transition duration-300">
                                     <i className="fas fa-user-plus mr-2"></i>Register Player
                                 </Link>
-                                 <Link to="/registration" className="block w-full text-center bg-gray-600 text-white font-bold py-2 px-4 rounded-lg hover:bg-gray-700 transition duration-300">
-                                    Register Another School
-                                </Link>
+                                 <button onClick={async () => { await account.deleteSession('current'); navigate('/signin'); }} className="block w-full text-center bg-dark-gray text-white font-bold py-2 px-4 rounded-lg hover:bg-gray-700 transition duration-300">
+                                    Sign Out
+                                </button>
                             </div>
                         </div>
                     </div>

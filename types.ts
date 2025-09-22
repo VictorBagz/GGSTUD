@@ -1,4 +1,3 @@
-
 export interface Member {
   name: string;
   title: string;
@@ -53,4 +52,21 @@ export interface Event {
   image: string;
   responsible: string;
   leagues?: string[];
+}
+
+export interface RegistrationFormData {
+  schoolName: string;
+  centerNumber: string;
+  officeContact: string;
+  region: string;
+  district: string;
+  schoolBadge: File | null;
+  adminFullName: string;
+  adminNin: string;
+  adminContact: string;
+  adminEmail: string;
+  adminRole: string;
+  adminEducation: string;
+  adminPassword: string;
+  adminProfilePhoto: File | null;
 }

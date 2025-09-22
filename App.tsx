@@ -52,7 +52,7 @@ const App: React.FC = () => {
             <Route path="/photos" element={<PhotosPage />} />
             <Route path="/registration" element={<RegistrationPage />} />
             <Route path="/player-registration" element={<PlayerRegistrationPage />} />
-            <Route path="/profile" element={<ProfilePage />} />
+            <Route path="/profile/:schoolId" element={<ProfilePage />} />
             <Route path="/signin" element={<SignInPage />} />
           </Routes>
         </main>
