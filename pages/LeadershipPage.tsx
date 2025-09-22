@@ -3,7 +3,7 @@ import { Member, Committee, RegionalCommittee } from '../types';
 import { leadershipData } from '../constants';
 
 const MemberCard: React.FC<{ member: Member }> = ({ member }) => (
-  <div className="bg-white rounded-lg shadow-lg p-6 transition-all duration-300 hover:shadow-2xl hover:-translate-y-2 border-t-4 border-secondary-yellow hover:border-primary-red">
+  <div className="bg-white rounded-lg shadow-lg p-6 transition-all duration-300 hover:shadow-2xl hover:-translate-y-2 border-t-4 border-secondary-yellow hover:border-primary-red h-full">
     <div className="flex items-center mb-4">
       {member.photo && <img className="w-16 h-16 rounded-full object-cover mr-4 border-2 border-secondary-yellow" src={member.photo} alt={member.name} />}
       <div>
@@ -14,7 +14,7 @@ const MemberCard: React.FC<{ member: Member }> = ({ member }) => (
     <p className="text-text-dark font-medium italic">{member.school}</p>
     <p className="bg-dark-yellow/20 text-dark-yellow font-bold text-xs inline-block px-2 py-1 rounded-full my-2">{member.region}</p>
     <div className="text-sm text-gray-600 mt-4 border-t pt-4">
-      {member.email && <p><i className="fas fa-envelope w-6 text-primary-red"></i> {member.email}</p>}
+      {member.email && <p className="truncate"><i className="fas fa-envelope w-6 text-primary-red"></i> {member.email}</p>}
       {member.phone && <p><i className="fas fa-phone w-6 text-primary-red"></i> {member.phone}</p>}
     </div>
   </div>
@@ -26,19 +26,19 @@ const LeadershipPage: React.FC = () => {
 
   return (
     <div className="bg-light-gray">
-      <section className="bg-gradient-to-r from-primary-red to-dark-red text-white text-center py-24">
-        <h1 className="text-5xl font-extrabold" data-aos="fade-down">Leadership Structure 2025</h1>
-        <p className="mt-4 text-xl" data-aos="fade-up">Uganda Schools Rugby Association - Affiliate Member, Uganda Rugby Union (URU)</p>
+      <section className="bg-gradient-to-r from-primary-red to-dark-red text-white text-center py-16 md:py-24">
+        <h1 className="text-4xl md:text-5xl font-extrabold" data-aos="fade-down">Leadership Structure 2025</h1>
+        <p className="mt-4 text-lg md:text-xl max-w-3xl mx-auto" data-aos="fade-up">Uganda Schools Rugby Association - Affiliate Member, Uganda Rugby Union (URU)</p>
       </section>
 
       <div className="sticky top-20 bg-white shadow-md z-40">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex space-x-2 md:space-x-4 overflow-x-auto py-4">
+        <div className="max-w-7xl mx-auto">
+          <div className="flex space-x-1 sm:space-x-2 md:space-x-4 overflow-x-auto py-3 px-2 sm:px-4">
             {tabs.map(tab => (
               <button
                 key={tab}
                 onClick={() => setActiveTab(tab)}
-                className={`px-4 py-2 text-sm md:text-base font-semibold rounded-full transition-colors duration-300 whitespace-nowrap ${activeTab === tab ? 'bg-secondary-yellow text-white shadow-lg' : 'bg-gray-200 text-gray-700 hover:bg-gray-300'}`}
+                className={`px-3 py-2 text-xs sm:px-4 sm:py-2 sm:text-sm md:text-base font-semibold rounded-full transition-colors duration-300 whitespace-nowrap ${activeTab === tab ? 'bg-secondary-yellow text-white shadow-lg' : 'bg-gray-200 text-gray-700 hover:bg-gray-300'}`}
               >
                 {tab}
               </button>
@@ -47,7 +47,7 @@ const LeadershipPage: React.FC = () => {
         </div>
       </div>
       
-      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
+      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 sm:py-12 min-h-screen">
         {leadershipData.map(committee => {
           if (committee.name !== activeTab) return null;
 

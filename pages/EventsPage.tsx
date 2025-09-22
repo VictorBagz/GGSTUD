@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { Event, EventCategory, EventTimeline } from '../types';
 import { eventsData } from '../constants';
