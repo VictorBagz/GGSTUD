@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { RegistrationFormData } from '../types';
 import FileUploadInput from '../components/FileUploadInput';
@@ -65,6 +65,7 @@ const RegistrationPage: React.FC = () => {
     const handleSubmit = async () => {
         setIsLoading(true);
         setError(null);
+
         try {
             // Step 1: Create the User Account
             const user = await account.create(ID.unique(), formData.adminEmail, formData.adminPassword, formData.adminFullName);
@@ -72,21 +73,22 @@ const RegistrationPage: React.FC = () => {
             // Step 2: Immediately create a session for the new user (Log In)
             await account.createEmailPasswordSession(formData.adminEmail, formData.adminPassword);
 
-            // Now authenticated, proceed with file uploads and database creation
-            // Step 3: Upload Files
-            let schoolBadgeId: string | null = null;
+            // --- From this point on, the user is AUTHENTICATED ---
+
+            // Step 3: Upload Files (as an authenticated user)
+            let schoolBadgeId: string | undefined;
             if (formData.schoolBadge) {
                 const badgeFile = await storage.createFile(AppwriteConfig.schoolBadgesBucketId, ID.unique(), formData.schoolBadge);
                 schoolBadgeId = badgeFile.$id;
             }
 
-            let adminProfilePhotoId: string | null = null;
+            let adminProfilePhotoId: string | undefined;
             if (formData.adminProfilePhoto) {
                 const photoFile = await storage.createFile(AppwriteConfig.adminProfilePhotosBucketId, ID.unique(), formData.adminProfilePhoto);
                 adminProfilePhotoId = photoFile.$id;
             }
 
-            // Step 4: Create Database Document with matching attribute names
+            // Step 4: Create Database Document (as an authenticated user)
             const schoolData = {
                 userId: user.$id,
                 schoolName: formData.schoolName,
@@ -117,8 +119,12 @@ const RegistrationPage: React.FC = () => {
         } catch (e: any) {
             setError(e.message || "An unexpected error occurred. Please try again.");
             console.error("Registration failed:", e);
-            // Clean up failed session if user was created but session failed
-            try { await account.deleteSession('current'); } catch (_) {}
+            // Clean up any active session if registration fails midway
+            try { 
+                await account.deleteSession('current'); 
+            } catch (_) {
+                // Ignore if no session exists
+            }
         } finally {
             setIsLoading(false);
         }

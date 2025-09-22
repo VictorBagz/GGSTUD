@@ -71,7 +71,7 @@ export interface RegistrationFormData {
   adminProfilePhoto: File | null;
 }
 
-// This interface should match the Appwrite 'schools' collection attributes
+// This interface must exactly match your Appwrite 'schools' collection attributes
 export interface SchoolDocument {
     userId: string;
     schoolName: string;
@@ -87,4 +87,15 @@ export interface SchoolDocument {
     admin_role: string;
     admin_education: string;
     admin_photoId?: string;
+}
+
+export interface PlayerDocument {
+    schoolId: string;
+    playerName: string;
+    dateOfBirth: string;
+    age: number;
+    nextOfKinContact: string;
+    lin: string;
+    playerClass: string;
+    photoId?: string;
 }
