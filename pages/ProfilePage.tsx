@@ -2,24 +2,12 @@ import React, { useState, useEffect } from 'react';
 import { Link, useParams, useNavigate } from 'react-router-dom';
 import { databases, storage, account, AppwriteConfig } from '../lib/appwrite';
 import { Models } from 'appwrite';
-
-// FIX: Add admin_photoId to the interface to match the data structure and remove @ts-ignore.
-interface SchoolData extends Models.Document {
-    name: string;
-    center_number: string;
-    contact: string;
-    region: string;
-    district: string;
-    badgeId?: string;
-    admin_name: string;
-    admin_role: string;
-    admin_photoId?: string;
-}
+import { SchoolDocument } from '../types';
 
 const ProfilePage: React.FC = () => {
     const { schoolId } = useParams<{ schoolId: string }>();
     const navigate = useNavigate();
-    const [schoolData, setSchoolData] = useState<SchoolData | null>(null);
+    const [schoolData, setSchoolData] = useState<SchoolDocument & Models.Document | null>(null);
     const [badgeUrl, setBadgeUrl] = useState<string | null>(null);
     const [photoUrl, setPhotoUrl] = useState<string | null>(null);
     const [loading, setLoading] = useState(true);
@@ -35,8 +23,7 @@ const ProfilePage: React.FC = () => {
                     throw new Error("School ID is missing.");
                 }
 
-                // FIX: Use generic type with getDocument to avoid unsafe casting.
-                const data = await databases.getDocument<SchoolData>(
+                const data = await databases.getDocument<SchoolDocument & Models.Document>(
                     AppwriteConfig.databaseId,
                     AppwriteConfig.schoolCollectionId,
                     schoolId
@@ -46,21 +33,18 @@ const ProfilePage: React.FC = () => {
 
                 if (data.badgeId) {
                     const url = storage.getFilePreview(AppwriteConfig.schoolBadgesBucketId, data.badgeId);
-                    // FIX: Use toString() as getFilePreview returns a URL object, and its string representation is needed. This also handles cases where it might return a string.
                     setBadgeUrl(url.toString());
                 }
                 
-                // Assuming admin_photoId exists in your document
                 if (data.admin_photoId) {
                     const url = storage.getFilePreview(AppwriteConfig.adminProfilePhotosBucketId, data.admin_photoId);
-                    // FIX: Use toString() for consistency and correctness.
                     setPhotoUrl(url.toString());
                 }
 
             } catch (e: any) {
                 console.error("Failed to fetch profile:", e);
                 // If not authenticated, redirect to sign-in
-                if (e.code === 401) {
+                if (e.code === 401 || (e.message && e.message.includes('User is not authenticated'))) {
                     navigate('/signin');
                 } else {
                     setError(e.message || "Could not load profile data.");
@@ -106,11 +90,11 @@ const ProfilePage: React.FC = () => {
                         <div>
                             <h3 className="text-xl font-bold text-primary-red border-b pb-2 mb-4">School Information</h3>
                             <div className="grid md:grid-cols-2 gap-4 text-gray-700">
-                                <p><strong>School Name:</strong> {schoolData?.name}</p>
-                                <p><strong>Centre Number:</strong> {schoolData?.center_number}</p>
-                                <p><strong>Contact:</strong> {schoolData?.contact}</p>
-                                <p><strong>Region:</strong> {schoolData?.region}</p>
-                                <p><strong>District:</strong> {schoolData?.district}</p>
+                                <p><strong>School Name:</strong> {schoolData?.schoolName}</p>
+                                <p><strong>Centre Number:</strong> {schoolData?.centerNumber}</p>
+                                <p><strong>Contact:</strong> {schoolData?.schoolContact}</p>
+                                <p><strong>Region:</strong> {schoolData?.Region}</p>
+                                <p><strong>District:</strong> {schoolData?.District}</p>
                             </div>
                             {badgeUrl && <div className="mt-4"><p className="font-semibold">School Badge:</p><img src={badgeUrl} alt="School Badge" className="h-20 mt-2 rounded" /></div>}
                         </div>

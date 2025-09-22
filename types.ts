@@ -70,3 +70,21 @@ export interface RegistrationFormData {
   adminPassword: string;
   adminProfilePhoto: File | null;
 }
+
+// This interface should match the Appwrite 'schools' collection attributes
+export interface SchoolDocument {
+    userId: string;
+    schoolName: string;
+    centerNumber: string;
+    schoolContact: string;
+    schoolEmail: string;
+    Region: string;
+    District: string;
+    badgeId?: string;
+    admin_name: string;
+    admin_nin: string;
+    admin_contact: string;
+    admin_role: string;
+    admin_education: string;
+    admin_photoId?: string;
+}

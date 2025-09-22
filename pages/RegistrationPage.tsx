@@ -86,18 +86,18 @@ const RegistrationPage: React.FC = () => {
                 adminProfilePhotoId = photoFile.$id;
             }
 
-            // Step 4: Create Database Document
+            // Step 4: Create Database Document with matching attribute names
             const schoolData = {
                 userId: user.$id,
-                name: formData.schoolName,
-                center_number: formData.centerNumber,
-                contact: formData.officeContact,
-                region: formData.region,
-                district: formData.district,
+                schoolName: formData.schoolName,
+                centerNumber: formData.centerNumber,
+                schoolContact: formData.officeContact,
+                Region: formData.region,
+                District: formData.district,
+                schoolEmail: formData.adminEmail,
                 badgeId: schoolBadgeId,
                 admin_name: formData.adminFullName,
                 admin_nin: formData.adminNin,
-                admin_email: formData.adminEmail,
                 admin_contact: formData.adminContact,
                 admin_role: formData.adminRole,
                 admin_education: formData.adminEducation,

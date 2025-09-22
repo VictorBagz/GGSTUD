@@ -1,10 +1,4 @@
-
 import { Committee, RegionalCommittee, Event, EventCategory, EventTimeline } from './types';
-
-export const APPWRITE_CONFIG = {
-    DATABASE_ID: '68d123fa001ab3e4ced6', 
-    USER_COLLECTION_ID: 'schools', 
-};
 
 export const leadershipData: (Committee | RegionalCommittee)[] = [
   {

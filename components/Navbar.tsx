@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { NavLink, Link, useLocation } from 'react-router-dom';
 
@@ -10,7 +9,6 @@ const Navbar: React.FC = () => {
   const navLinks = [
     { to: '/', text: 'Home' },
     { to: '/events', text: 'Events' },
-    { to: '/about', text: 'About' },
     {
       text: 'More',
       dropdown: [
@@ -20,7 +18,6 @@ const Navbar: React.FC = () => {
         { to: '/photos', text: 'Photos' },
       ],
     },
-    { to: '/contact', text: 'Contact' },
   ];
 
   useEffect(() => {
@@ -51,7 +48,7 @@ const Navbar: React.FC = () => {
                 link.dropdown ? (
                   <div key={link.text} className="relative group">
                     <button className="text-gray-300 hover:bg-gray-700 hover:text-white px-3 py-2 rounded-md text-sm font-medium flex items-center">
-                      {link.text} <i className="fas fa-chevron-down ml-1"></i>
+                      {link.text} <i className="fas fa-chevron-down ml-1 text-xs"></i>
                     </button>
                     <div className="absolute left-0 mt-2 w-48 rounded-md shadow-lg py-1 bg-white ring-1 ring-black ring-opacity-5 opacity-0 group-hover:opacity-100 transition-opacity duration-300 invisible group-hover:visible">
                       {link.dropdown.map((item) => (
@@ -59,7 +56,7 @@ const Navbar: React.FC = () => {
                           key={item.to}
                           to={item.to}
                           className={({ isActive }) =>
-                            `block px-4 py-2 text-sm ${isActive ? 'bg-gray-100 text-gray-900' : 'text-gray-700'}`
+                            `block px-4 py-2 text-sm ${isActive ? 'bg-gray-100 text-gray-900' : 'text-gray-700 hover:bg-gray-100'}`
                           }
                         >
                           {item.text}
@@ -80,8 +77,11 @@ const Navbar: React.FC = () => {
                   </NavLink>
                 )
               )}
-               <Link to="/registration" className="bg-primary-red text-white hover:bg-dark-red px-4 py-2 rounded-full text-sm font-bold transition duration-300">
-                Register School
+               <NavLink to="/signin" className={({ isActive }) => `px-3 py-2 rounded-md text-sm font-medium ${isActive ? 'bg-primary-red text-white' : 'text-gray-300 hover:bg-gray-700 hover:text-white'}`}>
+                Sign In
+              </NavLink>
+               <Link to="/registration" className="bg-primary-red text-white hover:bg-dark-red px-4 py-2 rounded-full text-sm font-bold transition duration-300 flex items-center gap-2">
+                 <i className="fas fa-user-plus"></i> Register
               </Link>
             </div>
           </div>
@@ -129,6 +129,9 @@ const Navbar: React.FC = () => {
                 </NavLink>
               )
             )}
+             <NavLink to="/signin" className={({ isActive }) => `block px-3 py-2 rounded-md text-base font-medium ${isActive ? 'bg-primary-red text-white' : 'text-gray-300 hover:bg-gray-700 hover:text-white'}`}>
+                Sign In
+              </NavLink>
             <Link to="/registration" className="block w-full text-center bg-primary-red text-white hover:bg-dark-red px-4 py-3 rounded-md text-base font-bold transition duration-300 mt-2">
                 Register School
             </Link>
