@@ -1,0 +1,5 @@
+{
+  "name": "USRA Rugby Website",
+  "description": "A React-based replica of the Uganda Schools Rugby Association (USRA) website, showcasing events, leadership, news, and registration functionalities with a modern and responsive design.",
+  "requestFramePermissions": []
+}
