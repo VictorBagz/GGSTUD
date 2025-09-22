@@ -1,16 +1,15 @@
-
 import React from 'react';
 
 const PlayerRegistrationPage: React.FC = () => {
     return (
     <>
         <section className="bg-gradient-to-r from-primary-red to-dark-red text-white text-center py-24">
-            <h1 className="text-5xl font-extrabold"><i className="fas fa-user-plus mr-4"></i>Player Registration</h1>
-            <p className="mt-4 text-xl max-w-3xl mx-auto">Register a new player for your school's rugby team.</p>
+            <h1 className="text-5xl font-extrabold" data-aos="fade-down"><i className="fas fa-user-plus mr-4"></i>Player Registration</h1>
+            <p className="mt-4 text-xl max-w-3xl mx-auto" data-aos="fade-up">Register a new player for your school's rugby team.</p>
         </section>
 
         <div className="py-20 max-w-4xl mx-auto px-4">
-            <div className="bg-white p-8 rounded-lg shadow-2xl">
+            <div className="bg-white p-8 rounded-lg shadow-2xl" data-aos="fade-up">
                 <div className="text-center mb-8">
                     <div className="w-32 h-32 rounded-full bg-gray-200 mx-auto flex items-center justify-center mb-4">
                         <i className="fas fa-user text-5xl text-gray-400"></i>

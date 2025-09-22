@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Event, EventCategory, EventTimeline } from '../types';
 import { eventsData } from '../constants';
@@ -88,18 +87,18 @@ const EventsPage: React.FC = () => {
     return (
         <>
             <section className="bg-gradient-to-r from-primary-red to-dark-red text-white text-center py-24">
-                <h1 className="text-5xl font-extrabold">Events & Tournaments</h1>
-                <p className="mt-4 text-xl max-w-3xl mx-auto">Join us for exciting rugby competitions, training camps, and community events across Uganda.</p>
+                <h1 className="text-5xl font-extrabold" data-aos="fade-down">Events & Tournaments</h1>
+                <p className="mt-4 text-xl max-w-3xl mx-auto" data-aos="fade-up">Join us for exciting rugby competitions, training camps, and community events across Uganda.</p>
             </section>
 
             <div className="py-16 px-4">
                 <div className="max-w-7xl mx-auto">
-                    <div className="flex justify-center mb-8 bg-gray-100 p-2 rounded-full">
+                    <div className="flex justify-center mb-8 bg-gray-100 p-2 rounded-full" data-aos="fade-up">
                          <button onClick={() => setTimelineFilter(EventTimeline.UPCOMING)} className={`px-6 py-2 rounded-full font-semibold ${timelineFilter === EventTimeline.UPCOMING ? 'bg-primary-red text-white' : 'text-gray-600'}`}>Upcoming</button>
                          <button onClick={() => setTimelineFilter(EventTimeline.PAST)} className={`px-6 py-2 rounded-full font-semibold ${timelineFilter === EventTimeline.PAST ? 'bg-primary-red text-white' : 'text-gray-600'}`}>Past</button>
                          <button onClick={() => setTimelineFilter(EventTimeline.ALL)} className={`px-6 py-2 rounded-full font-semibold ${timelineFilter === EventTimeline.ALL ? 'bg-primary-red text-white' : 'text-gray-600'}`}>All Events</button>
                     </div>
-                     <div className="flex justify-center flex-wrap gap-2 mb-12">
+                     <div className="flex justify-center flex-wrap gap-2 mb-12" data-aos="fade-up" data-aos-delay="100">
                          <button onClick={() => setCategoryFilter(EventCategory.ALL)} className={`px-4 py-2 text-sm rounded-full font-semibold ${categoryFilter === EventCategory.ALL ? 'bg-secondary-yellow text-white' : 'bg-gray-200 text-gray-700'}`}>All</button>
                          <button onClick={() => setCategoryFilter(EventCategory.TOURNAMENT)} className={`px-4 py-2 text-sm rounded-full font-semibold ${categoryFilter === EventCategory.TOURNAMENT ? 'bg-secondary-yellow text-white' : 'bg-gray-200 text-gray-700'}`}>Tournaments</button>
                          <button onClick={() => setCategoryFilter(EventCategory.MEETING)} className={`px-4 py-2 text-sm rounded-full font-semibold ${categoryFilter === EventCategory.MEETING ? 'bg-secondary-yellow text-white' : 'bg-gray-200 text-gray-700'}`}>Meetings</button>
@@ -108,7 +107,11 @@ const EventsPage: React.FC = () => {
                      </div>
 
                     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-                        {filteredEvents.map(event => <EventCard key={event.id} event={event} onDetailsClick={setSelectedEvent} />)}
+                        {filteredEvents.map((event, index) => (
+                          <div key={event.id} data-aos="fade-up" data-aos-delay={index * 100}>
+                            <EventCard event={event} onDetailsClick={setSelectedEvent} />
+                          </div>
+                        ))}
                     </div>
                 </div>
             </div>

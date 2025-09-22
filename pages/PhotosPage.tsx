@@ -1,4 +1,3 @@
-
 import React from 'react';
 
 const collections = [
@@ -9,8 +8,8 @@ const collections = [
     { title: 'School Visits', description: 'USRA officials visiting member schools and coaching clinics.', count: '90+', date: 'September 2024', icon: 'fa-school' }
 ];
 
-const PhotoCollectionCard: React.FC<typeof collections[0]> = ({ title, description, count, date, icon }) => (
-    <div className="bg-white rounded-lg shadow-lg p-6 flex flex-col items-start transition-all duration-300 hover:shadow-2xl hover:-translate-y-2 border-t-4 border-primary-red">
+const PhotoCollectionCard: React.FC<typeof collections[0] & { 'data-aos-delay'?: string }> = ({ title, description, count, date, icon, ...props }) => (
+    <div className="bg-white rounded-lg shadow-lg p-6 flex flex-col items-start transition-all duration-300 hover:shadow-2xl hover:-translate-y-2 border-t-4 border-primary-red" data-aos="fade-up" {...props}>
         <div className="text-4xl text-primary-red mb-4">
             <i className={`fas ${icon}`}></i>
         </div>
@@ -31,15 +30,15 @@ const PhotosPage: React.FC = () => {
     return (
         <>
             <section className="bg-gradient-to-r from-primary-red to-dark-red text-white text-center py-24">
-                <h1 className="text-5xl font-extrabold">Photo Collections</h1>
-                <p className="mt-4 text-xl max-w-3xl mx-auto">Explore our complete collection of USRA rugby photos from tournaments, training sessions, ceremonies, and team events.</p>
+                <h1 className="text-5xl font-extrabold" data-aos="fade-down">Photo Collections</h1>
+                <p className="mt-4 text-xl max-w-3xl mx-auto" data-aos="fade-up">Explore our complete collection of USRA rugby photos from tournaments, training sessions, ceremonies, and team events.</p>
             </section>
 
             <div className="py-20">
                 <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
                     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-                        {collections.map(collection => (
-                            <PhotoCollectionCard key={collection.title} {...collection} />
+                        {collections.map((collection, index) => (
+                            <PhotoCollectionCard key={collection.title} {...collection} data-aos-delay={`${index * 100}`} />
                         ))}
                     </div>
                 </div>

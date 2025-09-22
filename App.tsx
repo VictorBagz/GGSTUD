@@ -1,6 +1,5 @@
-
-import React from 'react';
-import { HashRouter, Routes, Route } from 'react-router-dom';
+import React, { useEffect } from 'react';
+import { HashRouter, Routes, Route, useLocation } from 'react-router-dom';
 import HomePage from './pages/HomePage';
 import LeadershipPage from './pages/LeadershipPage';
 import EventsPage from './pages/EventsPage';
@@ -14,9 +13,32 @@ import SignInPage from './pages/SignInPage';
 import Navbar from './components/Navbar';
 import Footer from './components/Footer';
 
+declare const AOS: any;
+
+const ScrollToTop = () => {
+  const { pathname } = useLocation();
+
+  useEffect(() => {
+    window.scrollTo(0, 0);
+    AOS.refresh();
+  }, [pathname]);
+
+  return null;
+}
+
 const App: React.FC = () => {
+  useEffect(() => {
+    AOS.init({
+      duration: 800,
+      easing: 'ease-in-out',
+      once: true,
+      offset: 100,
+    });
+  }, []);
+
   return (
     <HashRouter>
+      <ScrollToTop />
       <div className="bg-light-gray text-text-dark font-sans">
         <Navbar />
         <main>

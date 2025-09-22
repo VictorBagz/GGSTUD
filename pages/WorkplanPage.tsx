@@ -1,4 +1,3 @@
-
 import React from 'react';
 
 const workplanData = [
@@ -16,39 +15,22 @@ const workplanData = [
     { month: 'Dec', date: '14-20', title: 'Abu Dhabi World Schools Festival', body: 'International exposure for the U20 select team.' },
 ];
 
-const TimelineItem: React.FC<{ item: typeof workplanData[0]; index: number }> = ({ item, index }) => {
-  const isLeft = index % 2 === 0;
-  return (
-    <div className="mb-8 flex justify-between items-center w-full">
-      <div className={`order-1 w-5/12 ${isLeft ? 'hidden md:block' : ''}`}></div>
-      <div className="z-20 flex items-center order-1 bg-primary-red shadow-xl w-16 h-16 rounded-full">
-        <h1 className="mx-auto font-semibold text-lg text-white text-center">{item.month}<br/>{item.date}</h1>
-      </div>
-      <div className={`order-1 ${isLeft ? 'bg-secondary-yellow/10' : 'bg-primary-red/10'} rounded-lg shadow-xl w-full md:w-5/12 px-6 py-4`}>
-        <h3 className={`mb-3 font-bold ${isLeft ? 'text-secondary-yellow' : 'text-primary-red'} text-xl`}>{item.title}</h3>
-        <p className="text-sm leading-snug tracking-wide text-gray-900 text-opacity-100">{item.body}</p>
-      </div>
-    </div>
-  );
-};
-
-
 const WorkplanPage: React.FC = () => {
   return (
     <>
       <section className="bg-gradient-to-r from-primary-red to-dark-red text-white text-center py-24">
-        <h1 className="text-5xl font-extrabold">USRA Workplan 2025</h1>
-        <p className="mt-4 text-xl max-w-3xl mx-auto">Comprehensive Activity Calendar for 2025</p>
+        <h1 className="text-5xl font-extrabold" data-aos="fade-down">USRA Workplan 2025</h1>
+        <p className="mt-4 text-xl max-w-3xl mx-auto" data-aos="fade-up">Comprehensive Activity Calendar for 2025</p>
       </section>
 
       <div className="py-16">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-            <h2 className="text-3xl font-bold text-center text-primary-red mb-12">2025 at a Glance</h2>
+            <h2 className="text-3xl font-bold text-center text-primary-red mb-12" data-aos="fade-up">2025 at a Glance</h2>
             <div className="grid grid-cols-2 md:grid-cols-4 gap-8 text-center mb-16">
-                <div className="p-4 bg-white shadow-lg rounded-lg"><div className="text-4xl font-bold text-secondary-yellow">12</div><div className="text-gray-600">Major Activities</div></div>
-                <div className="p-4 bg-white shadow-lg rounded-lg"><div className="text-4xl font-bold text-secondary-yellow">8</div><div className="text-gray-600">Regional Leagues</div></div>
-                <div className="p-4 bg-white shadow-lg rounded-lg"><div className="text-4xl font-bold text-secondary-yellow">5</div><div className="text-gray-600">National Events</div></div>
-                <div className="p-4 bg-white shadow-lg rounded-lg"><div className="text-4xl font-bold text-secondary-yellow">4</div><div className="text-gray-600">Regions Covered</div></div>
+                <div className="p-4 bg-white shadow-lg rounded-lg" data-aos="zoom-in" data-aos-delay="0"><div className="text-4xl font-bold text-secondary-yellow">12</div><div className="text-gray-600">Major Activities</div></div>
+                <div className="p-4 bg-white shadow-lg rounded-lg" data-aos="zoom-in" data-aos-delay="100"><div className="text-4xl font-bold text-secondary-yellow">8</div><div className="text-gray-600">Regional Leagues</div></div>
+                <div className="p-4 bg-white shadow-lg rounded-lg" data-aos="zoom-in" data-aos-delay="200"><div className="text-4xl font-bold text-secondary-yellow">5</div><div className="text-gray-600">National Events</div></div>
+                <div className="p-4 bg-white shadow-lg rounded-lg" data-aos="zoom-in" data-aos-delay="300"><div className="text-4xl font-bold text-secondary-yellow">4</div><div className="text-gray-600">Regions Covered</div></div>
             </div>
 
             <div className="relative wrap overflow-hidden p-10 h-full">
@@ -59,7 +41,7 @@ const WorkplanPage: React.FC = () => {
                         <div className="z-20 flex items-center order-1 bg-primary-red shadow-xl w-16 h-16 rounded-full">
                             <h1 className="mx-auto text-white font-semibold text-lg text-center">{item.month}<br/>{item.date}</h1>
                         </div>
-                        <div className="order-1 bg-white rounded-lg shadow-xl w-5/12 px-6 py-4">
+                        <div className="order-1 bg-white rounded-lg shadow-xl w-5/12 px-6 py-4" data-aos={index % 2 !== 0 ? 'fade-left' : 'fade-right'}>
                             <h3 className={`mb-3 font-bold ${index % 2 === 0 ? 'text-primary-red' : 'text-secondary-yellow'} text-xl`}>{item.title}</h3>
                             <p className="text-sm leading-snug tracking-wide text-gray-600">{item.body}</p>
                         </div>

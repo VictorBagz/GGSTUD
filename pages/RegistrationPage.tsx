@@ -1,4 +1,3 @@
-
 // This component is a placeholder for the complex multi-step form.
 // A full implementation would require extensive state management for form fields, validation, and step transitions.
 import React from 'react';
@@ -7,12 +6,12 @@ const RegistrationPage: React.FC = () => {
   return (
     <>
         <section className="bg-gradient-to-r from-primary-red to-dark-red text-white text-center py-24">
-            <h1 className="text-5xl font-extrabold">School Registration</h1>
-            <p className="mt-4 text-xl max-w-3xl mx-auto">Join the Uganda Schools Rugby Association and become part of the growing rugby community.</p>
+            <h1 className="text-5xl font-extrabold" data-aos="fade-down">School Registration</h1>
+            <p className="mt-4 text-xl max-w-3xl mx-auto" data-aos="fade-up">Join the Uganda Schools Rugby Association and become part of the growing rugby community.</p>
         </section>
 
         <div className="py-20 max-w-4xl mx-auto px-4">
-            <div className="bg-white p-8 rounded-lg shadow-2xl">
+            <div className="bg-white p-8 rounded-lg shadow-2xl" data-aos="fade-up">
                 <h2 className="text-2xl font-bold text-center text-primary-red mb-8">Registration Form</h2>
                 <form className="space-y-6">
                     <div>

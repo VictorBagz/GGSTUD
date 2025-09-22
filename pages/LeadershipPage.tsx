@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { Member, Committee, RegionalCommittee } from '../types';
 import { leadershipData } from '../constants';
@@ -28,8 +27,8 @@ const LeadershipPage: React.FC = () => {
   return (
     <div className="bg-light-gray">
       <section className="bg-gradient-to-r from-primary-red to-dark-red text-white text-center py-24">
-        <h1 className="text-5xl font-extrabold">Leadership Structure 2025</h1>
-        <p className="mt-4 text-xl">Uganda Schools Rugby Association - Affiliate Member, Uganda Rugby Union (URU)</p>
+        <h1 className="text-5xl font-extrabold" data-aos="fade-down">Leadership Structure 2025</h1>
+        <p className="mt-4 text-xl" data-aos="fade-up">Uganda Schools Rugby Association - Affiliate Member, Uganda Rugby Union (URU)</p>
       </section>
 
       <div className="sticky top-20 bg-white shadow-md z-40">
@@ -54,24 +53,28 @@ const LeadershipPage: React.FC = () => {
 
           if ('members' in committee) { // Type guard for Committee
             return (
-              <div key={committee.name} className="animate-fade-in">
-                <h2 className="text-3xl font-bold text-center text-primary-red mb-8">{committee.name}</h2>
+              <div key={committee.name}>
+                <h2 className="text-3xl font-bold text-center text-primary-red mb-8" data-aos="fade-up">{committee.name}</h2>
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
                   {(committee as Committee).members.map((member, index) => (
-                    <MemberCard key={index} member={member} />
+                    <div key={index} data-aos="fade-up" data-aos-delay={index * 50}>
+                      <MemberCard member={member} />
+                    </div>
                   ))}
                 </div>
               </div>
             );
           } else if ('zones' in committee) { // Type guard for RegionalCommittee
              return (
-              <div key={committee.name} className="animate-fade-in">
+              <div key={committee.name}>
                  {(committee as RegionalCommittee).zones.map(zone => (
                      <div key={zone.name} className="mb-12">
-                         <h3 className="text-2xl font-bold text-center text-secondary-yellow mb-6 relative pb-2 after:content-[''] after:absolute after:bottom-0 after:left-1/2 after:-translate-x-1/2 after:w-16 after:h-1 after:bg-primary-red after:rounded-full">{zone.name}</h3>
+                         <h3 className="text-2xl font-bold text-center text-secondary-yellow mb-6 relative pb-2 after:content-[''] after:absolute after:bottom-0 after:left-1/2 after:-translate-x-1/2 after:w-16 after:h-1 after:bg-primary-red after:rounded-full" data-aos="fade-up">{zone.name}</h3>
                          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
                              {zone.members.map((member, index) => (
-                                <MemberCard key={index} member={member} />
+                                <div key={index} data-aos="fade-up" data-aos-delay={index * 50}>
+                                  <MemberCard member={member} />
+                                </div>
                              ))}
                          </div>
                      </div>
