@@ -1,4 +1,4 @@
-import { Client, Account, Databases, Storage, ID } from 'appwrite';
+import { Client, Account, Databases, Storage, ID, Permission, Role } from 'appwrite';
 
 const client = new Client();
 
@@ -19,4 +19,4 @@ export const AppwriteConfig = {
     playerPhotosBucketId: '68d1276100219f5b40a1',
 };
 
-export { ID };
+export { ID, Permission, Role };

@@ -133,6 +133,7 @@ const ProfilePage: React.FC = () => {
                                 <p><strong>Contact:</strong> {schoolData?.schoolContact}</p>
                                 <p><strong>Region:</strong> {schoolData?.Region}</p>
                                 <p><strong>District:</strong> {schoolData?.District}</p>
+                                <p><strong>Email:</strong> {schoolData?.schoolEmail}</p>
                             </div>
                             {badgeUrl && <div className="mt-4"><p className="font-semibold">School Badge:</p><img src={badgeUrl} alt="School Badge" className="h-20 mt-2 rounded" /></div>}
                         </div>
@@ -140,7 +141,10 @@ const ProfilePage: React.FC = () => {
                             <h3 className="text-xl font-bold text-primary-red border-b pb-2 mb-4">Representative Information</h3>
                              <div className="grid md:grid-cols-2 gap-4 text-gray-700">
                                 <p><strong>Full Name:</strong> {schoolData?.admin_name}</p>
+                                <p><strong>NIN:</strong> {schoolData?.admin_nin}</p>
+                                <p><strong>Contact:</strong> {schoolData?.admin_contact}</p>
                                 <p><strong>Role:</strong> {schoolData?.admin_role}</p>
+                                <p><strong>Education:</strong> {schoolData?.admin_education}</p>
                              </div>
                              {photoUrl && <div className="mt-4"><p className="font-semibold">Profile Photo:</p><img src={photoUrl} alt="Admin" className="h-20 w-20 mt-2 rounded-full object-cover" /></div>}
                         </div>

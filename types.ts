@@ -58,6 +58,7 @@ export interface RegistrationFormData {
   schoolName: string;
   centerNumber: string;
   officeContact: string;
+
   region: string;
   district: string;
   schoolBadge: File | null;

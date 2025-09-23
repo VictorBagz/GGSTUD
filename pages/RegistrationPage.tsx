@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { RegistrationFormData } from '../types';
 import FileUploadInput from '../components/FileUploadInput';
-import { account, databases, storage, AppwriteConfig, ID } from '../lib/appwrite';
+import { account, databases, storage, AppwriteConfig, ID, Permission, Role } from '../lib/appwrite';
 
 declare const feather: any;
 
@@ -65,10 +65,12 @@ const RegistrationPage: React.FC = () => {
     const handleSubmit = async () => {
         setIsLoading(true);
         setError(null);
+        let createdUserId: string | null = null;
 
         try {
             // Step 1: Create the User Account
             const user = await account.create(ID.unique(), formData.adminEmail, formData.adminPassword, formData.adminFullName);
+            createdUserId = user.$id;
 
             // Step 2: Immediately create a session for the new user (Log In)
             await account.createEmailPasswordSession(formData.adminEmail, formData.adminPassword);
@@ -110,7 +112,11 @@ const RegistrationPage: React.FC = () => {
                 AppwriteConfig.databaseId,
                 AppwriteConfig.schoolCollectionId,
                 ID.unique(),
-                schoolData
+                schoolData,
+                [
+                    Permission.read(Role.user(user.$id)),
+                    Permission.update(Role.user(user.$id)),
+                ]
             );
             
             // Step 5: Redirect to Profile Page
@@ -119,11 +125,17 @@ const RegistrationPage: React.FC = () => {
         } catch (e: any) {
             setError(e.message || "An unexpected error occurred. Please try again.");
             console.error("Registration failed:", e);
-            // Clean up any active session if registration fails midway
-            try { 
-                await account.deleteSession('current'); 
-            } catch (_) {
-                // Ignore if no session exists
+             // Cleanup failed registration
+            if (createdUserId) {
+                console.log("Attempting to clean up created user...");
+                // This is difficult to do securely from the client.
+                // Ideally, a server function would handle this cleanup.
+                // For now, log out any potentially created session.
+                 try { 
+                    await account.deleteSession('current'); 
+                } catch (_) {
+                    // Ignore if no session exists
+                }
             }
         } finally {
             setIsLoading(false);
