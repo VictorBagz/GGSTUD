@@ -36,15 +36,44 @@
     "react/": "https://aistudiocdn.com/react@^19.1.1/",
     "react": "https://aistudiocdn.com/react@^19.1.1",
     "react-router-dom": "https://aistudiocdn.com/react-router-dom@^7.9.1",
-    "appwrite": "https://aistudiocdn.com/appwrite@15.0.0"
+    "@supabase/supabase-js": "https://esm.sh/@supabase/supabase-js@2",
+    "appwrite": "https://aistudiocdn.com/appwrite@^20.1.0"
   }
 }
 </script>
+<style>
+  .progress-step {
+    width: 2.5rem; /* 40px */
+    height: 2.5rem; /* 40px */
+    border-radius: 9999px; /* full */
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    position: relative;
+    z-index: 10;
+    transition: background-color 0.3s ease;
+  }
+  .file-upload {
+    border: 2px dashed #d1d5db; /* border-gray-300 */
+    transition: all 0.3s ease;
+  }
+  .file-upload:hover {
+    border-color: #dc2626; /* border-primary-red */
+    background-color: #fef2f2; /* bg-red-50 */
+  }
+  .file-upload.active {
+    border-color: #16a34a; /* border-green-600 */
+  }
+  .preview {
+    display: flex;
+    align-items: center;
+    gap: 1rem; /* 16px */
+  }
+</style>
 </head>
   <body>
     <div id="root"></div>
     <script src="https://unpkg.com/aos@2.3.1/dist/aos.js"></script>
-    <script src="https://unpkg.com/feather-icons"></script>
     <script type="module" src="/index.tsx"></script>
   </body>
 </html>

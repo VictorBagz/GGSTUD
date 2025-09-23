@@ -1,10 +1,9 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { RegistrationFormData } from '../types';
 import FileUploadInput from '../components/FileUploadInput';
-import { account, databases, storage, AppwriteConfig, ID, Permission, Role } from '../lib/appwrite';
-
-declare const feather: any;
+import { supabase, AppConstants } from '../lib/supabase';
+import PasswordStrengthMeter from '../components/PasswordStrengthMeter';
 
 const ProgressStep: React.FC<{ icon: string, step: number, currentStep: number }> = ({ icon, step, currentStep }) => {
     const isCompleted = currentStep > step;
@@ -18,7 +17,7 @@ const ProgressStep: React.FC<{ icon: string, step: number, currentStep: number }
                 color: (isActive || isCompleted) ? 'white' : '#9ca3af',
             }}
         >
-            <i data-feather={icon}></i>
+            <i className={`fas fa-${icon}`}></i>
         </div>
     );
 };
@@ -26,31 +25,81 @@ const ProgressStep: React.FC<{ icon: string, step: number, currentStep: number }
 const RegistrationPage: React.FC = () => {
     const [currentStep, setCurrentStep] = useState(1);
     const [formData, setFormData] = useState<RegistrationFormData>({
-        schoolName: '', centerNumber: '', officeContact: '', region: '', district: '', schoolBadge: null,
-        adminFullName: '', adminNin: '', adminContact: '', adminEmail: '', adminRole: '', adminEducation: '', adminPassword: '', adminProfilePhoto: null
+        school_name: '', center_number: '', office_contact: '', region: '', district: '', school_badge: null,
+        admin_full_name: '', admin_nin: '', admin_contact: '', admin_email: '', admin_role: '', admin_education: '', admin_password: '', admin_confirm_password: '', admin_profile_photo: null
     });
     const [termsAccepted, setTermsAccepted] = useState(false);
     const [passwordVisible, setPasswordVisible] = useState(false);
     const [isLoading, setIsLoading] = useState(false);
     const [error, setError] = useState<string | null>(null);
+    const [errors, setErrors] = useState<Partial<Record<keyof RegistrationFormData, string>>>({});
     const navigate = useNavigate();
-
-    useEffect(() => {
-        feather.replace();
-    }, [currentStep, passwordVisible]);
 
     const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
         const { name, value } = e.target;
         setFormData(prev => ({ ...prev, [name]: value }));
+        if (errors[name as keyof RegistrationFormData]) {
+            setErrors(prev => ({ ...prev, [name]: undefined }));
+        }
     };
 
     const handleFileChange = (name: keyof RegistrationFormData, file: File | null) => {
         setFormData(prev => ({ ...prev, [name]: file }));
+        if (errors[name]) {
+            setErrors(prev => ({ ...prev, [name]: undefined }));
+        }
     };
 
     const navigateTo = (step: number) => {
         setCurrentStep(step);
         window.scrollTo(0, 0);
+    };
+
+    const validateStep = (step: number) => {
+        const newErrors: Partial<Record<keyof RegistrationFormData, string>> = {};
+        if (step === 1) {
+            if (!formData.school_name) newErrors.school_name = 'School Name is required.';
+            if (!formData.office_contact) newErrors.office_contact = 'Office Contact is required.';
+            if (!formData.region) newErrors.region = 'Region is required.';
+            if (!formData.district) newErrors.district = 'District is required.';
+            if (!formData.school_badge) newErrors.school_badge = 'School Badge is required.';
+        } else if (step === 2) {
+            if (!formData.admin_full_name) newErrors.admin_full_name = 'Full Name is required.';
+            if (!formData.admin_contact) newErrors.admin_contact = 'Contact Number is required.';
+            if (!formData.admin_email) {
+                newErrors.admin_email = 'Administrator Email is required.';
+            } else if (!/\S+@\S+\.\S+/.test(formData.admin_email)) {
+                newErrors.admin_email = 'Email address is invalid.';
+            }
+            if (!formData.admin_role) newErrors.admin_role = 'Role is required.';
+            if (!formData.admin_education) newErrors.admin_education = 'Level of Education is required.';
+            if (!formData.admin_password) {
+                newErrors.admin_password = 'Password is required.';
+            } else if (formData.admin_password.length < 8) {
+                newErrors.admin_password = 'Password must be at least 8 characters long.';
+            }
+            if (formData.admin_password !== formData.admin_confirm_password) {
+                newErrors.admin_confirm_password = 'Passwords do not match.';
+            }
+            if (!formData.admin_profile_photo) newErrors.admin_profile_photo = 'Profile Photo is required.';
+        }
+        return newErrors;
+    };
+
+    const handleStep1Next = () => {
+        const stepErrors = validateStep(1);
+        setErrors(stepErrors);
+        if (Object.keys(stepErrors).length === 0) {
+            navigateTo(2);
+        }
+    };
+
+    const handleStep2Next = () => {
+        const stepErrors = validateStep(2);
+        setErrors(stepErrors);
+        if (Object.keys(stepErrors).length === 0) {
+            navigateTo(3);
+        }
     };
 
     const togglePasswordVisibility = () => {
@@ -65,78 +114,69 @@ const RegistrationPage: React.FC = () => {
     const handleSubmit = async () => {
         setIsLoading(true);
         setError(null);
-        let createdUserId: string | null = null;
-
+    
         try {
-            // Step 1: Create the User Account
-            const user = await account.create(ID.unique(), formData.adminEmail, formData.adminPassword, formData.adminFullName);
-            createdUserId = user.$id;
-
-            // Step 2: Immediately create a session for the new user (Log In)
-            await account.createEmailPasswordSession(formData.adminEmail, formData.adminPassword);
-
-            // --- From this point on, the user is AUTHENTICATED ---
-
-            // Step 3: Upload Files (as an authenticated user)
-            let schoolBadgeId: string | undefined;
-            if (formData.schoolBadge) {
-                const badgeFile = await storage.createFile(AppwriteConfig.schoolBadgesBucketId, ID.unique(), formData.schoolBadge);
-                schoolBadgeId = badgeFile.$id;
+            const { data, error: authError } = await supabase.auth.signUp({
+                email: formData.admin_email,
+                password: formData.admin_password,
+                options: {
+                    data: {
+                        full_name: formData.admin_full_name,
+                    }
+                }
+            });
+    
+            if (authError) throw authError;
+            if (!data.user) throw new Error("User not created. Please try again.");
+            const user = data.user;
+    
+            let badgePath: string | undefined;
+            if (formData.school_badge) {
+                const filePath = `public/${user.id}-${Date.now()}-${formData.school_badge.name}`;
+                const { error: uploadError } = await supabase.storage.from(AppConstants.schoolBadgesBucket).upload(filePath, formData.school_badge);
+                if (uploadError) throw uploadError;
+                badgePath = filePath;
+            }
+    
+            let adminPhotoPath: string | undefined;
+            if (formData.admin_profile_photo) {
+                const filePath = `public/${user.id}-${Date.now()}-${formData.admin_profile_photo.name}`;
+                const { error: uploadError } = await supabase.storage.from(AppConstants.adminProfilePhotosBucket).upload(filePath, formData.admin_profile_photo);
+                if (uploadError) throw uploadError;
+                adminPhotoPath = filePath;
             }
 
-            let adminProfilePhotoId: string | undefined;
-            if (formData.adminProfilePhoto) {
-                const photoFile = await storage.createFile(AppwriteConfig.adminProfilePhotosBucketId, ID.unique(), formData.adminProfilePhoto);
-                adminProfilePhotoId = photoFile.$id;
-            }
-
-            // Step 4: Create Database Document (as an authenticated user)
             const schoolData = {
-                userId: user.$id,
-                schoolName: formData.schoolName,
-                centerNumber: formData.centerNumber,
-                schoolContact: formData.officeContact,
-                Region: formData.region,
-                District: formData.district,
-                schoolEmail: formData.adminEmail,
-                badgeId: schoolBadgeId,
-                admin_name: formData.adminFullName,
-                admin_nin: formData.adminNin,
-                admin_contact: formData.adminContact,
-                admin_role: formData.adminRole,
-                admin_education: formData.adminEducation,
-                admin_photoId: adminProfilePhotoId,
+                user_id: user.id,
+                school_name: formData.school_name,
+                center_number: formData.center_number,
+                school_contact: formData.office_contact,
+                region: formData.region,
+                district: formData.district,
+                school_email: formData.admin_email,
+                badge_path: badgePath,
+                admin_name: formData.admin_full_name,
+                admin_nin: formData.admin_nin,
+                admin_contact: formData.admin_contact,
+                admin_role: formData.admin_role,
+                admin_education: formData.admin_education,
+                admin_photo_path: adminPhotoPath,
             };
 
-            const schoolDocument = await databases.createDocument(
-                AppwriteConfig.databaseId,
-                AppwriteConfig.schoolCollectionId,
-                ID.unique(),
-                schoolData,
-                [
-                    Permission.read(Role.user(user.$id)),
-                    Permission.update(Role.user(user.$id)),
-                ]
-            );
-            
-            // Step 5: Redirect to Profile Page
-            navigate(`/profile/${schoolDocument.$id}`);
+            const { data: schoolDocument, error: dbError } = await supabase
+                .from('schools')
+                .insert(schoolData)
+                .select()
+                .single();
 
+            if (dbError) throw dbError;
+            if (!schoolDocument) throw new Error("School profile could not be created.");
+            
+            navigate(`/profile/${schoolDocument.id}`);
+    
         } catch (e: any) {
             setError(e.message || "An unexpected error occurred. Please try again.");
             console.error("Registration failed:", e);
-             // Cleanup failed registration
-            if (createdUserId) {
-                console.log("Attempting to clean up created user...");
-                // This is difficult to do securely from the client.
-                // Ideally, a server function would handle this cleanup.
-                // For now, log out any potentially created session.
-                 try { 
-                    await account.deleteSession('current'); 
-                } catch (_) {
-                    // Ignore if no session exists
-                }
-            }
         } finally {
             setIsLoading(false);
         }
@@ -165,40 +205,44 @@ const RegistrationPage: React.FC = () => {
                         {/* Step 1: School Information */}
                         <div className={`form-section ${currentStep === 1 ? 'block' : 'hidden'}`}>
                             <h3 className="text-2xl font-semibold text-red-700 mb-6 flex items-center">
-                                <i data-feather="home" className="mr-2"></i> School Information
+                                <i className="fas fa-home mr-2"></i> School Information
                             </h3>
                              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                                 <div>
-                                    <label className="block text-gray-700 mb-2">School Name</label>
-                                    <input type="text" name="schoolName" value={formData.schoolName} onChange={handleInputChange} className="w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-1" placeholder="Enter school name" />
+                                    <label className="block text-gray-700 mb-2">School Name *</label>
+                                    <input type="text" name="school_name" value={formData.school_name} onChange={handleInputChange} className={`w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-1 ${errors.school_name ? 'border-red-500 ring-red-500' : 'focus:ring-primary-red'}`} placeholder="Enter school name" />
+                                    {errors.school_name && <p className="text-red-500 text-xs mt-1">{errors.school_name}</p>}
                                 </div>
                                 <div>
                                     <label className="block text-gray-700 mb-2">Center Number</label>
-                                    <input type="text" name="centerNumber" value={formData.centerNumber} onChange={handleInputChange} className="w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-1" placeholder="Enter center number" />
+                                    <input type="text" name="center_number" value={formData.center_number} onChange={handleInputChange} className="w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-1 focus:ring-primary-red" placeholder="Enter center number" />
                                 </div>
                                 <div>
-                                    <label className="block text-gray-700 mb-2">Office Contact</label>
-                                    <input type="tel" name="officeContact" value={formData.officeContact} onChange={handleInputChange} className="w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-1" placeholder="Enter contact number" />
+                                    <label className="block text-gray-700 mb-2">Office Contact *</label>
+                                    <input type="tel" name="office_contact" value={formData.office_contact} onChange={handleInputChange} className={`w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-1 ${errors.office_contact ? 'border-red-500 ring-red-500' : 'focus:ring-primary-red'}`} placeholder="Enter contact number" />
+                                    {errors.office_contact && <p className="text-red-500 text-xs mt-1">{errors.office_contact}</p>}
                                 </div>
                                  <div>
-                                    <label className="block text-gray-700 mb-2">Region</label>
-                                    <select name="region" value={formData.region} onChange={handleInputChange} className="w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-1 bg-white">
+                                    <label className="block text-gray-700 mb-2">Region *</label>
+                                    <select name="region" value={formData.region} onChange={handleInputChange} className={`w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-1 bg-white ${errors.region ? 'border-red-500 ring-red-500' : 'focus:ring-primary-red'}`}>
                                         <option value="">Select region</option>
                                         <option>Northern</option>
                                         <option>Central</option>
                                         <option>Eastern</option>
                                         <option>Western</option>
                                     </select>
+                                    {errors.region && <p className="text-red-500 text-xs mt-1">{errors.region}</p>}
                                 </div>
                                  <div>
-                                    <label className="block text-gray-700 mb-2">District</label>
-                                    <input type="text" name="district" value={formData.district} onChange={handleInputChange} className="w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-1" placeholder="Enter district" />
+                                    <label className="block text-gray-700 mb-2">District *</label>
+                                    <input type="text" name="district" value={formData.district} onChange={handleInputChange} className={`w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-1 ${errors.district ? 'border-red-500 ring-red-500' : 'focus:ring-primary-red'}`} placeholder="Enter district" />
+                                    {errors.district && <p className="text-red-500 text-xs mt-1">{errors.district}</p>}
                                 </div>
-                                <FileUploadInput id="schoolBadge" label="School Badge" onFileChange={(file) => handleFileChange('schoolBadge', file)} />
+                                <FileUploadInput id="schoolBadge" label="School Badge *" onFileChange={(file) => handleFileChange('school_badge', file)} error={errors.school_badge} />
                             </div>
                             <div className="flex justify-end mt-8">
-                                <button onClick={() => navigateTo(2)} className="px-6 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition duration-300 flex items-center">
-                                    Next <i data-feather="arrow-right" className="ml-2 w-5 h-5"></i>
+                                <button onClick={handleStep1Next} className="px-6 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition duration-300 flex items-center">
+                                    Next <i className="fas fa-arrow-right ml-2 w-5 h-5"></i>
                                 </button>
                             </div>
                         </div>
@@ -206,56 +250,70 @@ const RegistrationPage: React.FC = () => {
                         {/* Step 2: Administrator Information */}
                         <div className={`form-section ${currentStep === 2 ? 'block' : 'hidden'}`}>
                              <h3 className="text-2xl font-semibold text-red-700 mb-6 flex items-center">
-                                <i data-feather="user" className="mr-2"></i> Administrator Information
+                                <i className="fas fa-user mr-2"></i> Administrator Information
                             </h3>
                             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                                 <div>
-                                    <label className="block text-gray-700 mb-2">Full Name</label>
-                                    <input type="text" name="adminFullName" value={formData.adminFullName} onChange={handleInputChange} className="w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-1" placeholder="Enter full name" />
+                                    <label className="block text-gray-700 mb-2">Full Name *</label>
+                                    <input type="text" name="admin_full_name" value={formData.admin_full_name} onChange={handleInputChange} className={`w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-1 ${errors.admin_full_name ? 'border-red-500 ring-red-500' : 'focus:ring-primary-red'}`} placeholder="Enter full name" />
+                                    {errors.admin_full_name && <p className="text-red-500 text-xs mt-1">{errors.admin_full_name}</p>}
                                 </div>
                                 <div>
                                     <label className="block text-gray-700 mb-2">National ID (NIN)</label>
-                                    <input type="text" name="adminNin" value={formData.adminNin} onChange={handleInputChange} className="w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-1" placeholder="Enter NIN" />
+                                    <input type="text" name="admin_nin" value={formData.admin_nin} onChange={handleInputChange} className="w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-1 focus:ring-primary-red" placeholder="Enter NIN" />
                                 </div>
                                 <div>
-                                    <label className="block text-gray-700 mb-2">Contact Number</label>
-                                    <input type="tel" name="adminContact" value={formData.adminContact} onChange={handleInputChange} className="w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-1" placeholder="Enter contact number" />
+                                    <label className="block text-gray-700 mb-2">Contact Number *</label>
+                                    <input type="tel" name="admin_contact" value={formData.admin_contact} onChange={handleInputChange} className={`w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-1 ${errors.admin_contact ? 'border-red-500 ring-red-500' : 'focus:ring-primary-red'}`} placeholder="Enter contact number" />
+                                    {errors.admin_contact && <p className="text-red-500 text-xs mt-1">{errors.admin_contact}</p>}
                                 </div>
                                 <div>
-                                    <label className="block text-gray-700 mb-2">Administrator Email</label>
-                                    <input type="email" name="adminEmail" value={formData.adminEmail} onChange={handleInputChange} className="w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-1" placeholder="Enter a valid email" />
+                                    <label className="block text-gray-700 mb-2">Administrator Email *</label>
+                                    <input type="email" name="admin_email" value={formData.admin_email} onChange={handleInputChange} className={`w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-1 ${errors.admin_email ? 'border-red-500 ring-red-500' : 'focus:ring-primary-red'}`} placeholder="Enter a valid email" />
+                                    {errors.admin_email && <p className="text-red-500 text-xs mt-1">{errors.admin_email}</p>}
                                 </div>
                                 <div>
-                                    <label className="block text-gray-700 mb-2">Role</label>
-                                    <select name="adminRole" value={formData.adminRole} onChange={handleInputChange} className="w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-1 bg-white">
+                                    <label className="block text-gray-700 mb-2">Role *</label>
+                                    <select name="admin_role" value={formData.admin_role} onChange={handleInputChange} className={`w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-1 bg-white ${errors.admin_role ? 'border-red-500 ring-red-500' : 'focus:ring-primary-red'}`}>
                                         <option value="">Select role</option>
                                         <option>Head Teacher</option><option>Deputy Head</option><option>Administrator</option><option>Bursar</option>
                                     </select>
+                                    {errors.admin_role && <p className="text-red-500 text-xs mt-1">{errors.admin_role}</p>}
                                 </div>
                                 <div>
-                                    <label className="block text-gray-700 mb-2">Level of Education</label>
-                                    <select name="adminEducation" value={formData.adminEducation} onChange={handleInputChange} className="w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-1 bg-white">
+                                    <label className="block text-gray-700 mb-2">Level of Education *</label>
+                                    <select name="admin_education" value={formData.admin_education} onChange={handleInputChange} className={`w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-1 bg-white ${errors.admin_education ? 'border-red-500 ring-red-500' : 'focus:ring-primary-red'}`}>
                                         <option value="">Select level</option>
                                         <option>Primary</option><option>Secondary</option><option>Vocational</option><option>University</option>
                                     </select>
+                                    {errors.admin_education && <p className="text-red-500 text-xs mt-1">{errors.admin_education}</p>}
                                 </div>
-                                <div>
-                                    <label className="block text-gray-700 mb-2">Password</label>
-                                    <div className="relative">
-                                        <input type={passwordVisible ? "text" : "password"} name="adminPassword" value={formData.adminPassword} onChange={handleInputChange} className="w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-1" placeholder="Minimum 8 characters" minLength={8} />
-                                        <button type="button" onClick={togglePasswordVisibility} className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 cursor-pointer">
-                                            <i data-feather={passwordVisible ? "eye-off" : "eye"}></i>
-                                        </button>
+                                <div className="md:col-span-2 grid grid-cols-1 md:grid-cols-2 gap-6">
+                                    <div>
+                                        <label className="block text-gray-700 mb-2">Password *</label>
+                                        <div className="relative">
+                                            <input type={passwordVisible ? "text" : "password"} name="admin_password" value={formData.admin_password} onChange={handleInputChange} className={`w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-1 ${errors.admin_password ? 'border-red-500 ring-red-500' : 'focus:ring-primary-red'}`} placeholder="Minimum 8 characters" />
+                                            <button type="button" onClick={togglePasswordVisibility} className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 cursor-pointer">
+                                                <i className={`fas ${passwordVisible ? "fa-eye-slash" : "fa-eye"}`}></i>
+                                            </button>
+                                        </div>
+                                        {errors.admin_password && <p className="text-red-500 text-xs mt-1">{errors.admin_password}</p>}
+                                        <PasswordStrengthMeter password={formData.admin_password} />
+                                    </div>
+                                    <div>
+                                        <label className="block text-gray-700 mb-2">Confirm Password *</label>
+                                        <input type="password" name="admin_confirm_password" value={formData.admin_confirm_password} onChange={handleInputChange} className={`w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-1 ${errors.admin_confirm_password ? 'border-red-500 ring-red-500' : 'focus:ring-primary-red'}`} placeholder="Confirm password" />
+                                        {errors.admin_confirm_password && <p className="text-red-500 text-xs mt-1">{errors.admin_confirm_password}</p>}
                                     </div>
                                 </div>
-                                 <FileUploadInput id="adminProfilePhoto" label="Profile Photo" onFileChange={(file) => handleFileChange('adminProfilePhoto', file)} previewShape="circle" />
+                                <FileUploadInput id="adminProfilePhoto" label="Profile Photo *" onFileChange={(file) => handleFileChange('admin_profile_photo', file)} previewShape="circle" error={errors.admin_profile_photo} />
                             </div>
                             <div className="flex justify-between mt-8">
                                 <button onClick={() => navigateTo(1)} className="px-6 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition duration-300 flex items-center">
-                                    <i data-feather="arrow-left" className="mr-2 w-5 h-5"></i> Back
+                                    <i className="fas fa-arrow-left mr-2 w-5 h-5"></i> Back
                                 </button>
-                                <button onClick={() => navigateTo(3)} className="px-6 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition duration-300 flex items-center">
-                                    Next <i data-feather="arrow-right" className="ml-2 w-5 h-5"></i>
+                                <button onClick={handleStep2Next} className="px-6 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition duration-300 flex items-center">
+                                    Next <i className="fas fa-arrow-right ml-2 w-5 h-5"></i>
                                 </button>
                             </div>
                         </div>
@@ -263,39 +321,39 @@ const RegistrationPage: React.FC = () => {
                         {/* Step 3: Summary & Submission */}
                         <div className={`form-section ${currentStep === 3 ? 'block' : 'hidden'}`}>
                              <h3 className="text-2xl font-semibold text-red-700 mb-6 flex items-center">
-                                <i data-feather="check-circle" className="mr-2"></i> Review & Submit
+                                <i className="fas fa-check-circle mr-2"></i> Review & Submit
                             </h3>
                             <div className="bg-red-50 rounded-lg p-6 mb-8">
-                                <h4 className="text-lg font-medium text-red-700 mb-4 flex items-center"><i data-feather="home" className="mr-2"></i> School Information</h4>
+                                <h4 className="text-lg font-medium text-red-700 mb-4 flex items-center"><i className="fas fa-home mr-2"></i> School Information</h4>
                                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
-                                    <div><p className="text-sm text-gray-500">School Name</p><p className="font-medium">{formData.schoolName || '-'}</p></div>
-                                    <div><p className="text-sm text-gray-500">Center Number</p><p className="font-medium">{formData.centerNumber || '-'}</p></div>
-                                    <div><p className="text-sm text-gray-500">Office Contact</p><p className="font-medium">{formData.officeContact || '-'}</p></div>
+                                    <div><p className="text-sm text-gray-500">School Name</p><p className="font-medium">{formData.school_name || '-'}</p></div>
+                                    <div><p className="text-sm text-gray-500">Center Number</p><p className="font-medium">{formData.center_number || '-'}</p></div>
+                                    <div><p className="text-sm text-gray-500">Office Contact</p><p className="font-medium">{formData.office_contact || '-'}</p></div>
                                     <div><p className="text-sm text-gray-500">Region/District</p><p className="font-medium">{formData.region && formData.district ? `${formData.region}, ${formData.district}` : '-'}</p></div>
                                 </div>
-                                {formData.schoolBadge && <div className="mt-4"><p className="text-sm text-gray-500">School Badge</p><img src={getPreviewUrl(formData.schoolBadge)} alt="Badge" className="h-16 mt-2 rounded" /></div>}
+                                {formData.school_badge && <div className="mt-4"><p className="text-sm text-gray-500">School Badge</p><img src={getPreviewUrl(formData.school_badge)} alt="Badge" className="h-16 mt-2 rounded" /></div>}
                             </div>
                             <div className="bg-red-50 rounded-lg p-6 mb-8">
-                                <h4 className="text-lg font-medium text-red-700 mb-4 flex items-center"><i data-feather="user" className="mr-2"></i> Administrator Information</h4>
+                                <h4 className="text-lg font-medium text-red-700 mb-4 flex items-center"><i className="fas fa-user mr-2"></i> Administrator Information</h4>
                                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
-                                    <div><p className="text-sm text-gray-500">Full Name</p><p className="font-medium">{formData.adminFullName || '-'}</p></div>
-                                    <div><p className="text-sm text-gray-500">National ID</p><p className="font-medium">{formData.adminNin || '-'}</p></div>
-                                    <div><p className="text-sm text-gray-500">Contact Number</p><p className="font-medium">{formData.adminContact || '-'}</p></div>
-                                    <div><p className="text-sm text-gray-500">Email</p><p className="font-medium">{formData.adminEmail || '-'}</p></div>
-                                    <div><p className="text-sm text-gray-500">Role</p><p className="font-medium">{formData.adminRole || '-'}</p></div>
-                                    <div><p className="text-sm text-gray-500">Level of Education</p><p className="font-medium">{formData.adminEducation || '-'}</p></div>
+                                    <div><p className="text-sm text-gray-500">Full Name</p><p className="font-medium">{formData.admin_full_name || '-'}</p></div>
+                                    <div><p className="text-sm text-gray-500">National ID</p><p className="font-medium">{formData.admin_nin || '-'}</p></div>
+                                    <div><p className="text-sm text-gray-500">Contact Number</p><p className="font-medium">{formData.admin_contact || '-'}</p></div>
+                                    <div><p className="text-sm text-gray-500">Email</p><p className="font-medium">{formData.admin_email || '-'}</p></div>
+                                    <div><p className="text-sm text-gray-500">Role</p><p className="font-medium">{formData.admin_role || '-'}</p></div>
+                                    <div><p className="text-sm text-gray-500">Level of Education</p><p className="font-medium">{formData.admin_education || '-'}</p></div>
                                 </div>
-                                {formData.adminProfilePhoto && <div className="mt-4"><p className="text-sm text-gray-500">Profile Photo</p><img src={getPreviewUrl(formData.adminProfilePhoto)} alt="Profile" className="h-16 w-16 rounded-full mt-2 object-cover" /></div>}
+                                {formData.admin_profile_photo && <div className="mt-4"><p className="text-sm text-gray-500">Profile Photo</p><img src={getPreviewUrl(formData.admin_profile_photo)} alt="Profile" className="h-16 w-16 rounded-full mt-2 object-cover" /></div>}
                             </div>
                             <div className="mb-8">
                                 <label htmlFor="termsCheck" className="flex items-start text-gray-700"><input type="checkbox" id="termsCheck" checked={termsAccepted} onChange={e => setTermsAccepted(e.target.checked)} className="mt-1 mr-3 h-4 w-4" />I agree to the <a href="#" className="text-red-600 hover:underline ml-1">Terms and Conditions</a> and confirm that all information provided is accurate.</label>
                             </div>
                             <div className="flex justify-between">
                                 <button onClick={() => navigateTo(2)} className="px-6 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition duration-300 flex items-center">
-                                    <i data-feather="arrow-left" className="mr-2 w-5 h-5"></i> Back
+                                    <i className="fas fa-arrow-left mr-2 w-5 h-5"></i> Back
                                 </button>
                                 <button disabled={!termsAccepted || isLoading} onClick={handleSubmit} className="px-6 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition duration-300 flex items-center disabled:opacity-50 disabled:cursor-not-allowed">
-                                    {isLoading ? <span className="animate-spin rounded-full h-5 w-5 border-b-2 border-white"></span> : <><i data-feather="send" className="mr-2 w-5 h-5"></i> Submit Registration</>}
+                                    {isLoading ? <span className="animate-spin rounded-full h-5 w-5 border-b-2 border-white"></span> : <><i className="fas fa-paper-plane mr-2 w-5 h-5"></i> Submit Registration</>}
                                 </button>
                             </div>
                         </div>

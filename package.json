@@ -12,7 +12,8 @@
     "react-dom": "^19.1.1",
     "react": "^19.1.1",
     "react-router-dom": "^7.9.1",
-    "appwrite": "15.0.0"
+    "@supabase/supabase-js": "2",
+    "appwrite": "^20.1.0"
   },
   "devDependencies": {
     "@types/node": "^22.14.0",

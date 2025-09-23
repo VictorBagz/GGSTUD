@@ -55,48 +55,51 @@ export interface Event {
 }
 
 export interface RegistrationFormData {
-  schoolName: string;
-  centerNumber: string;
-  officeContact: string;
-
+  school_name: string;
+  center_number: string;
+  office_contact: string;
   region: string;
   district: string;
-  schoolBadge: File | null;
-  adminFullName: string;
-  adminNin: string;
-  adminContact: string;
-  adminEmail: string;
-  adminRole: string;
-  adminEducation: string;
-  adminPassword: string;
-  adminProfilePhoto: File | null;
+  school_badge: File | null;
+  admin_full_name: string;
+  admin_nin: string;
+  admin_contact: string;
+  admin_email: string;
+  admin_role: string;
+  admin_education: string;
+  admin_password: string;
+  admin_confirm_password: string;
+  admin_profile_photo: File | null;
 }
 
-// This interface must exactly match your Appwrite 'schools' collection attributes
+// Corresponds to 'schools' table in Supabase
 export interface SchoolDocument {
-    userId: string;
-    schoolName: string;
-    centerNumber: string;
-    schoolContact: string;
-    schoolEmail: string;
-    Region: string;
-    District: string;
-    badgeId?: string;
+    id?: string;
+    user_id: string;
+    school_name: string;
+    center_number: string;
+    school_contact: string;
+    school_email: string;
+    region: string;
+    district: string;
+    badge_path?: string;
     admin_name: string;
     admin_nin: string;
     admin_contact: string;
     admin_role: string;
     admin_education: string;
-    admin_photoId?: string;
+    admin_photo_path?: string;
 }
 
+// Corresponds to 'players' table in Supabase
 export interface PlayerDocument {
-    schoolId: string;
-    playerName: string;
-    dateOfBirth: string;
+    id?: string;
+    school_id: string;
+    player_name: string;
+    date_of_birth: string;
     age: number;
-    nextOfKinContact: string;
+    next_of_kin_contact: string;
     lin: string;
-    playerClass: string;
-    photoId?: string;
+    player_class: string;
+    photo_path?: string;
 }

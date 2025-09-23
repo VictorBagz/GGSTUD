@@ -1,7 +1,6 @@
 import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { account, databases, AppwriteConfig } from '../lib/appwrite';
-import { Query } from 'appwrite';
+import { supabase } from '../lib/supabase';
 
 const SignInPage: React.FC = () => {
   const [email, setEmail] = useState('');
@@ -16,22 +15,28 @@ const SignInPage: React.FC = () => {
     setError(null);
 
     try {
-      await account.createEmailPasswordSession(email, password);
-      
-      const currentUser = await account.get();
-      
-      const schoolResponse = await databases.listDocuments(
-        AppwriteConfig.databaseId,
-        AppwriteConfig.schoolCollectionId,
-        [Query.equal('userId', currentUser.$id)]
-      );
+      // Use Supabase v2 API for sign in
+      const { data, error: signInError } = await supabase.auth.signInWithPassword({
+        email: email,
+        password: password,
+      });
 
-      if (schoolResponse.documents.length > 0) {
-        const schoolId = schoolResponse.documents[0].$id;
-        navigate(`/profile/${schoolId}`);
+      if (signInError) throw signInError;
+      if (!data.user) throw new Error("Authentication failed.");
+      
+      const { data: schoolResponse, error: dbError } = await supabase
+        .from('schools')
+        .select('id')
+        .eq('user_id', data.user.id)
+        .single();
+        
+      if (dbError) throw dbError;
+
+      if (schoolResponse) {
+        navigate(`/profile/${schoolResponse.id}`);
       } else {
         setError("Sign in successful, but no school profile found for this user.");
-        await account.deleteSession('current');
+        await supabase.auth.signOut();
       }
 
     } catch (e: any) {

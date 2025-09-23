@@ -1,9 +1,7 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { useNavigate, useParams, Link } from 'react-router-dom';
-import { databases, storage, AppwriteConfig, ID } from '../lib/appwrite';
+import { supabase, AppConstants } from '../lib/supabase';
 import FileUploadInput from '../components/FileUploadInput';
-
-declare const feather: any;
 
 const PlayerRegistrationPage: React.FC = () => {
     const { schoolId } = useParams<{ schoolId: string }>();
@@ -20,10 +18,6 @@ const PlayerRegistrationPage: React.FC = () => {
     const [isLoading, setIsLoading] = useState(false);
     const [error, setError] = useState<string | null>(null);
 
-    useEffect(() => {
-        feather.replace();
-    }, []);
-    
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
         if (!schoolId) {
@@ -34,29 +28,27 @@ const PlayerRegistrationPage: React.FC = () => {
         setError(null);
         
         try {
-            let photoId: string | undefined = undefined;
+            let photoPath: string | undefined = undefined;
             if (profilePhoto) {
-                const photoFile = await storage.createFile(AppwriteConfig.playerPhotosBucketId, ID.unique(), profilePhoto);
-                photoId = photoFile.$id;
+                const filePath = `public/${schoolId}-${Date.now()}-${profilePhoto.name}`;
+                const { error: uploadError } = await supabase.storage.from(AppConstants.playerPhotosBucket).upload(filePath, profilePhoto);
+                if (uploadError) throw uploadError;
+                photoPath = filePath;
             }
 
             const playerData = {
-                schoolId: schoolId,
-                playerName: playerName,
-                dateOfBirth: dateOfBirth,
+                school_id: schoolId,
+                player_name: playerName,
+                date_of_birth: dateOfBirth,
                 age: Number(age),
-                nextOfKinContact: nextOfKinContact,
+                next_of_kin_contact: nextOfKinContact,
                 lin: lin,
-                playerClass: playerClass,
-                photoId: photoId,
+                player_class: playerClass,
+                photo_path: photoPath,
             };
 
-            await databases.createDocument(
-                AppwriteConfig.databaseId,
-                AppwriteConfig.playersCollectionId,
-                ID.unique(),
-                playerData
-            );
+            const { error: dbError } = await supabase.from('players').insert(playerData);
+            if (dbError) throw dbError;
             
             navigate(`/profile/${schoolId}`);
 
