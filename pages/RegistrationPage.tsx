@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { RegistrationFormData } from '../types';
 import FileUploadInput from '../components/FileUploadInput';
-import { supabase, AppConstants } from '../lib/supabase';
+import { supabase } from '../lib/supabase';
 import PasswordStrengthMeter from '../components/PasswordStrengthMeter';
 
 const ProgressStep: React.FC<{ icon: string, step: number, currentStep: number }> = ({ icon, step, currentStep }) => {
@@ -59,17 +59,17 @@ const RegistrationPage: React.FC = () => {
         const newErrors: Partial<Record<keyof RegistrationFormData, string>> = {};
         if (step === 1) {
             if (!formData.school_name) newErrors.school_name = 'School Name is required.';
-            if (!formData.office_contact) newErrors.office_contact = 'Office Contact is required.';
+            if (!formData.office_contact) newErrors.office_contact = 'School Contact is required.';
             if (!formData.region) newErrors.region = 'Region is required.';
             if (!formData.district) newErrors.district = 'District is required.';
             if (!formData.school_badge) newErrors.school_badge = 'School Badge is required.';
         } else if (step === 2) {
-            if (!formData.admin_full_name) newErrors.admin_full_name = 'Full Name is required.';
+            if (!formData.admin_full_name) newErrors.admin_full_name = 'Admin Name is required.';
             if (!formData.admin_contact) newErrors.admin_contact = 'Contact Number is required.';
             if (!formData.admin_email) {
-                newErrors.admin_email = 'Administrator Email is required.';
+                newErrors.admin_email = 'School Email is required.';
             } else if (!/\S+@\S+\.\S+/.test(formData.admin_email)) {
-                newErrors.admin_email = 'Email address is invalid.';
+                newErrors.admin_email = 'School Email address is invalid.';
             }
             if (!formData.admin_role) newErrors.admin_role = 'Role is required.';
             if (!formData.admin_education) newErrors.admin_education = 'Level of Education is required.';
@@ -78,7 +78,7 @@ const RegistrationPage: React.FC = () => {
             } else if (formData.admin_password.length < 8) {
                 newErrors.admin_password = 'Password must be at least 8 characters long.';
             }
-            if (formData.admin_password !== formData.admin_confirm_password) {
+            if (formData.admin_confirm_password && formData.admin_password !== formData.admin_confirm_password) {
                 newErrors.admin_confirm_password = 'Passwords do not match.';
             }
             if (!formData.admin_profile_photo) newErrors.admin_profile_photo = 'Profile Photo is required.';
@@ -112,6 +112,19 @@ const RegistrationPage: React.FC = () => {
     };
 
     const handleSubmit = async () => {
+        // Final validation before submit
+        const finalErrors = validateStep(2);
+        if (Object.keys(finalErrors).length > 0) {
+            setErrors(finalErrors);
+            setCurrentStep(2);
+            window.scrollTo(0, 0);
+            return;
+        }
+        if (!termsAccepted) {
+            setError('You must accept the terms and conditions to proceed.');
+            return;
+        }
+
         setIsLoading(true);
         setError(null);
     
@@ -126,50 +139,54 @@ const RegistrationPage: React.FC = () => {
                 }
             });
     
-            if (authError) throw authError;
+            if (authError) throw new Error(`Auth error: ${authError.message}`);
             if (!data.user) throw new Error("User not created. Please try again.");
             const user = data.user;
     
             let badgePath: string | undefined;
             if (formData.school_badge) {
-                const filePath = `public/${user.id}-${Date.now()}-${formData.school_badge.name}`;
-                const { error: uploadError } = await supabase.storage.from(AppConstants.schoolBadgesBucket).upload(filePath, formData.school_badge);
-                if (uploadError) throw uploadError;
-                badgePath = filePath;
+                const fileName = `${user.id}-${Date.now()}-${formData.school_badge.name}`;
+                const { error: uploadError } = await supabase.storage
+                    .from('school-badges')
+                    .upload(fileName, formData.school_badge, { upsert: true });
+                if (uploadError) throw new Error(`Badge upload failed: ${uploadError.message}`);
+                badgePath = fileName;
             }
     
             let adminPhotoPath: string | undefined;
             if (formData.admin_profile_photo) {
-                const filePath = `public/${user.id}-${Date.now()}-${formData.admin_profile_photo.name}`;
-                const { error: uploadError } = await supabase.storage.from(AppConstants.adminProfilePhotosBucket).upload(filePath, formData.admin_profile_photo);
-                if (uploadError) throw uploadError;
-                adminPhotoPath = filePath;
+                const fileName = `${user.id}-${Date.now()}-${formData.admin_profile_photo.name}`;
+                const { error: uploadError } = await supabase.storage
+                    .from('admin-photos')
+                    .upload(fileName, formData.admin_profile_photo, { upsert: true });
+                if (uploadError) throw new Error(`Photo upload failed: ${uploadError.message}`);
+                adminPhotoPath = fileName;
             }
 
             const schoolData = {
                 user_id: user.id,
                 school_name: formData.school_name,
-                center_number: formData.center_number,
+                center_number: formData.center_number || null,
                 school_contact: formData.office_contact,
+                school_email: formData.admin_email,
                 region: formData.region,
                 district: formData.district,
-                school_email: formData.admin_email,
-                badge_path: badgePath,
+                badge_path: badgePath || null,
                 admin_name: formData.admin_full_name,
-                admin_nin: formData.admin_nin,
+                admin_nin: formData.admin_nin || null,
                 admin_contact: formData.admin_contact,
                 admin_role: formData.admin_role,
                 admin_education: formData.admin_education,
-                admin_photo_path: adminPhotoPath,
+                admin_photo_path: adminPhotoPath || null,
             };
 
             const { data: schoolDocument, error: dbError } = await supabase
                 .from('schools')
                 .insert(schoolData)
-                .select()
+                .select('id')
                 .single();
 
-            if (dbError) throw dbError;
+            if (dbError) throw new Error(`Database error: ${dbError.message}`);
             if (!schoolDocument) throw new Error("School profile could not be created.");
             
             navigate(`/profile/${schoolDocument.id}`);
@@ -218,7 +235,7 @@ const RegistrationPage: React.FC = () => {
                                     <input type="text" name="center_number" value={formData.center_number} onChange={handleInputChange} className="w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-1 focus:ring-primary-red" placeholder="Enter center number" />
                                 </div>
                                 <div>
-                                    <label className="block text-gray-700 mb-2">Office Contact *</label>
+                                    <label className="block text-gray-700 mb-2">School Contact *</label>
                                     <input type="tel" name="office_contact" value={formData.office_contact} onChange={handleInputChange} className={`w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-1 ${errors.office_contact ? 'border-red-500 ring-red-500' : 'focus:ring-primary-red'}`} placeholder="Enter contact number" />
                                     {errors.office_contact && <p className="text-red-500 text-xs mt-1">{errors.office_contact}</p>}
                                 </div>
@@ -254,7 +271,7 @@ const RegistrationPage: React.FC = () => {
                             </h3>
                             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                                 <div>
-                                    <label className="block text-gray-700 mb-2">Full Name *</label>
+                                    <label className="block text-gray-700 mb-2">Admin Name *</label>
                                     <input type="text" name="admin_full_name" value={formData.admin_full_name} onChange={handleInputChange} className={`w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-1 ${errors.admin_full_name ? 'border-red-500 ring-red-500' : 'focus:ring-primary-red'}`} placeholder="Enter full name" />
                                     {errors.admin_full_name && <p className="text-red-500 text-xs mt-1">{errors.admin_full_name}</p>}
                                 </div>
@@ -268,7 +285,7 @@ const RegistrationPage: React.FC = () => {
                                     {errors.admin_contact && <p className="text-red-500 text-xs mt-1">{errors.admin_contact}</p>}
                                 </div>
                                 <div>
-                                    <label className="block text-gray-700 mb-2">Administrator Email *</label>
+                                    <label className="block text-gray-700 mb-2">School Email *</label>
                                     <input type="email" name="admin_email" value={formData.admin_email} onChange={handleInputChange} className={`w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-1 ${errors.admin_email ? 'border-red-500 ring-red-500' : 'focus:ring-primary-red'}`} placeholder="Enter a valid email" />
                                     {errors.admin_email && <p className="text-red-500 text-xs mt-1">{errors.admin_email}</p>}
                                 </div>
@@ -328,7 +345,7 @@ const RegistrationPage: React.FC = () => {
                                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
                                     <div><p className="text-sm text-gray-500">School Name</p><p className="font-medium">{formData.school_name || '-'}</p></div>
                                     <div><p className="text-sm text-gray-500">Center Number</p><p className="font-medium">{formData.center_number || '-'}</p></div>
-                                    <div><p className="text-sm text-gray-500">Office Contact</p><p className="font-medium">{formData.office_contact || '-'}</p></div>
+                                    <div><p className="text-sm text-gray-500">School Contact</p><p className="font-medium">{formData.office_contact || '-'}</p></div>
                                     <div><p className="text-sm text-gray-500">Region/District</p><p className="font-medium">{formData.region && formData.district ? `${formData.region}, ${formData.district}` : '-'}</p></div>
                                 </div>
                                 {formData.school_badge && <div className="mt-4"><p className="text-sm text-gray-500">School Badge</p><img src={getPreviewUrl(formData.school_badge)} alt="Badge" className="h-16 mt-2 rounded" /></div>}
@@ -336,10 +353,10 @@ const RegistrationPage: React.FC = () => {
                             <div className="bg-red-50 rounded-lg p-6 mb-8">
                                 <h4 className="text-lg font-medium text-red-700 mb-4 flex items-center"><i className="fas fa-user mr-2"></i> Administrator Information</h4>
                                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
-                                    <div><p className="text-sm text-gray-500">Full Name</p><p className="font-medium">{formData.admin_full_name || '-'}</p></div>
+                                    <div><p className="text-sm text-gray-500">Admin Name</p><p className="font-medium">{formData.admin_full_name || '-'}</p></div>
                                     <div><p className="text-sm text-gray-500">National ID</p><p className="font-medium">{formData.admin_nin || '-'}</p></div>
                                     <div><p className="text-sm text-gray-500">Contact Number</p><p className="font-medium">{formData.admin_contact || '-'}</p></div>
-                                    <div><p className="text-sm text-gray-500">Email</p><p className="font-medium">{formData.admin_email || '-'}</p></div>
+                                    <div><p className="text-sm text-gray-500">School Email</p><p className="font-medium">{formData.admin_email || '-'}</p></div>
                                     <div><p className="text-sm text-gray-500">Role</p><p className="font-medium">{formData.admin_role || '-'}</p></div>
                                     <div><p className="text-sm text-gray-500">Level of Education</p><p className="font-medium">{formData.admin_education || '-'}</p></div>
                                 </div>
