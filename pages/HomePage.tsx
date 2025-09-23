@@ -7,7 +7,7 @@ const Hero = () => (
   <section id="home" className="relative h-screen flex items-center justify-center text-white text-center">
     <div className="absolute inset-0 bg-black opacity-60"></div>
     <video autoPlay loop muted playsInline className="absolute inset-0 w-full h-full object-cover">
-       <source src="https://picsum.photos/id/1/1920/1080" type="video/mp4" />
+       <source src="/video/hero-rugby.mp4" type="video/mp4" />
        Your browser does not support the video tag.
     </video>
     <div className="relative z-10 p-4">
@@ -34,7 +34,7 @@ const About = () => (
                     <p className="text-gray-600">What started with a handful of enthusiastic teams has grown into a nationwide organization overseeing both boys' and girls' rugby across 15s and 7s formats in primary and secondary schools throughout Uganda.</p>
                 </div>
                  <div className="rounded-lg overflow-hidden shadow-2xl" data-aos="zoom-in">
-                    <img src="https://picsum.photos/seed/about/600/400" alt="USRA Rugby Team" className="w-full h-full object-cover" />
+                    <img src="/img/about-usra.jpg" alt="USRA Rugby Team" className="w-full h-full object-cover" />
                 </div>
             </div>
         </div>
@@ -46,7 +46,7 @@ const ChairmanMessage = () => (
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8" data-aos="fade-up">
             <div className="grid md:grid-cols-3 gap-8 items-center bg-white p-8 rounded-lg shadow-xl">
                  <div className="md:col-span-1 flex justify-center" data-aos="fade-right">
-                     <img src="https://picsum.photos/seed/chairman/300/300" alt="Chairman" className="w-48 h-48 md:w-64 md:h-64 rounded-full object-cover border-4 border-primary-red"/>
+                     <img src="/img/leadership/okello-dickson.jpg" alt="Chairman Okello Dickson" className="w-48 h-48 md:w-64 md:h-64 rounded-full object-cover border-4 border-primary-red"/>
                  </div>
                  <div className="md:col-span-2" data-aos="fade-left">
                      <h2 className="text-3xl font-bold text-dark-gray mb-4">Chairman's Message</h2>
@@ -92,14 +92,8 @@ const Statistics = () => (
 );
 
 const Gallery = () => {
-    const images = [
-        'https://picsum.photos/seed/gallery1/500/500',
-        'https://picsum.photos/seed/gallery2/500/500',
-        'https://picsum.photos/seed/gallery3/500/500',
-        'https://picsum.photos/seed/gallery4/500/500',
-        'https://picsum.photos/seed/gallery5/500/500',
-        'https://picsum.photos/seed/gallery6/500/500',
-    ];
+    const images = Array.from({ length: 6 }, (_, i) => `/img/gallery/gallery-${i + 1}.jpg`);
+    
     return (
         <section id="gallery" className="py-20 bg-white">
             <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8" data-aos="fade-up">

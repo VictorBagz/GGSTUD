@@ -113,7 +113,7 @@ const Navbar: React.FC = () => {
         <div className="flex items-center justify-between h-20">
           <div className="flex-shrink-0">
             <Link to="/" className="flex items-center gap-3">
-              <img className="h-12 w-auto" src="https://picsum.photos/seed/logo/200/200" alt="USRA Logo" />
+              <img className="h-12 w-auto" src="/img/logo.png" alt="USRA Logo" />
               <span className="text-white font-bold text-xl hidden md:block">USRA</span>
             </Link>
           </div>

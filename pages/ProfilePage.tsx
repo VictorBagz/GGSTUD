@@ -211,7 +211,7 @@ const ProfilePage: React.FC = () => {
                         <tr key={player.id} className="hover:bg-gray-50">
                           <td className="py-3 px-4 border-b">
                             <img 
-                              src={getPublicUrl('player-photos', player.photo_path) || 'https://picsum.photos/seed/placeholder/50/50'} 
+                              src={getPublicUrl('player-photos', player.photo_path) || '/img/placeholder-player.png'} 
                               alt={player.player_name} 
                               className="w-12 h-12 object-cover rounded-full"
                             />

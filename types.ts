@@ -98,6 +98,7 @@ export interface PlayerDocument {
     player_name: string;
     date_of_birth: string;
     age: number;
+    next_of_kin_relationship: string;
     next_of_kin_contact: string;
     lin: string;
     player_class: string;

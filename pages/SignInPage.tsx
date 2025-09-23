@@ -49,7 +49,7 @@ const SignInPage: React.FC = () => {
 
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-light-gray py-12 px-4 sm:px-6 lg:px-8" style={{backgroundImage: "url('https://picsum.photos/seed/signin/1200/800')", backgroundSize: 'cover'}}>
+    <div className="min-h-screen flex items-center justify-center bg-light-gray py-12 px-4 sm:px-6 lg:px-8" style={{backgroundImage: "url('/img/signin-background.jpg')", backgroundSize: 'cover'}}>
       <div className="absolute inset-0 bg-black opacity-50"></div>
       <div className="max-w-md w-full space-y-8 bg-white p-10 rounded-xl shadow-2xl z-10" data-aos="zoom-in">
         <div>
