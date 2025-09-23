@@ -145,7 +145,7 @@ const RegistrationPage: React.FC = () => {
     
             let badgePath: string | undefined;
             if (formData.school_badge) {
-                const fileName = `${user.id}-${Date.now()}-${formData.school_badge.name}`;
+                const fileName = `public/${user.id}-${Date.now()}-${formData.school_badge.name}`;
                 const { error: uploadError } = await supabase.storage
                     .from('school-badges')
                     .upload(fileName, formData.school_badge, { upsert: true });
@@ -155,7 +155,7 @@ const RegistrationPage: React.FC = () => {
     
             let adminPhotoPath: string | undefined;
             if (formData.admin_profile_photo) {
-                const fileName = `${user.id}-${Date.now()}-${formData.admin_profile_photo.name}`;
+                const fileName = `public/${user.id}-${Date.now()}-${formData.admin_profile_photo.name}`;
                 const { error: uploadError } = await supabase.storage
                     .from('admin-photos')
                     .upload(fileName, formData.admin_profile_photo, { upsert: true });

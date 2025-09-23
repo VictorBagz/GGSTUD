@@ -20,41 +20,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    const fetchInitialSession = async () => {
-      try {
-        const { data: { session } } = await supabase.auth.getSession();
-        setSession(session);
-        const currentUser = session?.user ?? null;
-        setUser(currentUser);
-
-        if (currentUser) {
-          const { data, error } = await supabase
-            .from('schools')
-            .select('id')
-            .eq('user_id', currentUser.id)
-            .single();
-
-          // Ignore 'PGRST116' which means a user is logged in but has no school profile yet.
-          if (error && error.code !== 'PGRST116') {
-            console.error('Could not fetch school for user:', error.message);
-          }
-          setSchoolId(data?.id || null);
-        } else {
-          setSchoolId(null);
-        }
-      } catch (e) {
-        console.error('Error fetching initial session data:', e);
-        setUser(null);
-        setSession(null);
-        setSchoolId(null);
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    fetchInitialSession();
-
-    // Subscribe for future changes
+    // onAuthStateChange is called immediately with the current session,
+    // so we don't need a separate getSession() call. This avoids race conditions.
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       async (_event, session) => {
         setSession(session);
@@ -69,7 +36,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
               .eq('user_id', currentUser.id)
               .single();
             
-            if (error && error.code !== 'PGRST116') {
+            if (error && error.code !== 'PGRST116') { // Ignore if profile not found yet
               console.error("Could not fetch school for user", error.message);
             }
             setSchoolId(data?.id || null);
@@ -80,7 +47,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         } else {
           setSchoolId(null);
         }
-        // This setLoading(false) might be redundant if initial load is fast, but it's safe.
         setLoading(false);
       }
     );

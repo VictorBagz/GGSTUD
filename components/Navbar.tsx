@@ -1,10 +1,24 @@
-import React, { useState, useEffect } from 'react';
-import { NavLink, Link, useLocation } from 'react-router-dom';
+import React, { useState, useEffect, useRef } from 'react';
+import { NavLink, Link, useLocation, useNavigate } from 'react-router-dom';
+import { useAuth } from '../AuthContext';
 
 const Navbar: React.FC = () => {
   const [isOpen, setIsOpen] = useState(false);
+  const [isDropdownOpen, setIsDropdownOpen] = useState(false);
   const [isScrolled, setIsScrolled] = useState(false);
   const location = useLocation();
+  const navigate = useNavigate();
+  const { user, schoolId, logout } = useAuth();
+  const dropdownRef = useRef<HTMLDivElement>(null);
+
+  const handleLogout = async () => {
+    try {
+      await logout();
+      navigate('/signin');
+    } catch (error) {
+      console.error("Failed to log out", error);
+    }
+  };
 
   const navLinks = [
     { to: '/', text: 'Home' },
@@ -20,6 +34,7 @@ const Navbar: React.FC = () => {
     },
   ];
 
+  // Scroll handler
   useEffect(() => {
     const handleScroll = () => {
       setIsScrolled(window.scrollY > 50);
@@ -28,9 +43,69 @@ const Navbar: React.FC = () => {
     return () => window.removeEventListener('scroll', handleScroll);
   }, []);
 
+  // Close menus on navigation
   useEffect(() => {
     setIsOpen(false);
+    setIsDropdownOpen(false);
   }, [location]);
+
+  // Click outside to close dropdown
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
+        setIsDropdownOpen(false);
+      }
+    };
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+    };
+  }, []);
+
+  const AuthLinks: React.FC<{ isMobile?: boolean }> = ({ isMobile = false }) => {
+    if (user && schoolId) {
+      return (
+        <>
+          <NavLink
+            to={`/profile/${schoolId}`}
+            className={({ isActive }) => isMobile ?
+              `block px-3 py-2 rounded-md text-base font-medium ${isActive ? 'bg-primary-red text-white' : 'text-gray-300 hover:bg-gray-700 hover:text-white'}` :
+              `px-3 py-2 rounded-md text-sm font-medium ${isActive ? 'bg-primary-red text-white' : 'text-gray-300 hover:bg-gray-700 hover:text-white'}`
+            }
+          >
+            Profile
+          </NavLink>
+          <button
+            onClick={handleLogout}
+            className={isMobile ?
+              "block w-full text-left bg-gray-700 text-white hover:bg-dark-red px-4 py-3 rounded-md text-base font-bold transition duration-300 mt-2" :
+              "bg-primary-red text-white hover:bg-dark-red px-4 py-2 rounded-full text-sm font-bold transition duration-300 flex items-center gap-2"
+            }
+          >
+            <i className="fas fa-sign-out-alt"></i> Sign Out
+          </button>
+        </>
+      );
+    }
+    return (
+      <>
+        <NavLink to="/signin" className={({ isActive }) => isMobile ?
+            `block px-3 py-2 rounded-md text-base font-medium ${isActive ? 'bg-primary-red text-white' : 'text-gray-300 hover:bg-gray-700 hover:text-white'}` :
+            `px-3 py-2 rounded-md text-sm font-medium ${isActive ? 'bg-primary-red text-white' : 'text-gray-300 hover:bg-gray-700 hover:text-white'}`
+          }
+        >
+          Sign In
+        </NavLink>
+        <Link to="/registration" className={isMobile ?
+            "block w-full text-center bg-primary-red text-white hover:bg-dark-red px-4 py-3 rounded-md text-base font-bold transition duration-300 mt-2" :
+            "bg-primary-red text-white hover:bg-dark-red px-4 py-2 rounded-full text-sm font-bold transition duration-300 flex items-center gap-2"
+          }
+        >
+          <i className="fas fa-user-plus"></i> Register
+        </Link>
+      </>
+    );
+  };
 
   return (
     <nav className={`fixed top-0 left-0 right-0 z-50 transition-all duration-300 ${isScrolled || isOpen ? 'bg-dark-gray shadow-lg' : 'bg-transparent'}`}>
@@ -46,11 +121,18 @@ const Navbar: React.FC = () => {
             <div className="ml-10 flex items-center space-x-4">
               {navLinks.map((link) =>
                 link.dropdown ? (
-                  <div key={link.text} className="relative group">
-                    <button className="text-gray-300 hover:bg-gray-700 hover:text-white px-3 py-2 rounded-md text-sm font-medium flex items-center">
-                      {link.text} <i className="fas fa-chevron-down ml-1 text-xs"></i>
+                  <div key={link.text} className="relative" ref={dropdownRef}>
+                    <button
+                      onClick={() => setIsDropdownOpen(!isDropdownOpen)}
+                      className="text-gray-300 hover:bg-gray-700 hover:text-white px-3 py-2 rounded-md text-sm font-medium flex items-center"
+                    >
+                      {link.text} <i className={`fas fa-chevron-down ml-1 text-xs transition-transform duration-300 ${isDropdownOpen ? 'rotate-180' : ''}`}></i>
                     </button>
-                    <div className="absolute left-0 mt-2 w-48 rounded-md shadow-lg py-1 bg-white ring-1 ring-black ring-opacity-5 opacity-0 group-hover:opacity-100 transition-opacity duration-300 invisible group-hover:visible">
+                    <div
+                      className={`absolute left-0 mt-2 w-48 origin-top-left rounded-md shadow-lg py-1 bg-white ring-1 ring-black ring-opacity-5 transition-all duration-200 ease-out transform ${
+                        isDropdownOpen ? 'opacity-100 scale-100 visible' : 'opacity-0 scale-95 invisible'
+                      }`}
+                    >
                       {link.dropdown.map((item) => (
                         <NavLink
                           key={item.to}
@@ -77,12 +159,7 @@ const Navbar: React.FC = () => {
                   </NavLink>
                 )
               )}
-               <NavLink to="/signin" className={({ isActive }) => `px-3 py-2 rounded-md text-sm font-medium ${isActive ? 'bg-primary-red text-white' : 'text-gray-300 hover:bg-gray-700 hover:text-white'}`}>
-                Sign In
-              </NavLink>
-               <Link to="/registration" className="bg-primary-red text-white hover:bg-dark-red px-4 py-2 rounded-full text-sm font-bold transition duration-300 flex items-center gap-2">
-                 <i className="fas fa-user-plus"></i> Register
-              </Link>
+              <AuthLinks />
             </div>
           </div>
           <div className="-mr-2 flex md:hidden">
@@ -129,12 +206,8 @@ const Navbar: React.FC = () => {
                 </NavLink>
               )
             )}
-             <NavLink to="/signin" className={({ isActive }) => `block px-3 py-2 rounded-md text-base font-medium ${isActive ? 'bg-primary-red text-white' : 'text-gray-300 hover:bg-gray-700 hover:text-white'}`}>
-                Sign In
-              </NavLink>
-            <Link to="/registration" className="block w-full text-center bg-primary-red text-white hover:bg-dark-red px-4 py-3 rounded-md text-base font-bold transition duration-300 mt-2">
-                Register School
-            </Link>
+            <div className="border-t border-gray-700 my-2"></div>
+            <AuthLinks isMobile={true} />
           </div>
         </div>
       )}
