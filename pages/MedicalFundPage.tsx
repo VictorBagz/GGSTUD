@@ -5,7 +5,7 @@ import { Link } from 'react-router-dom';
 const MedicalFundPage: React.FC = () => {
   return (
     <>
-      <section className="relative bg-cover bg-center h-96" style={{ backgroundImage: "url('/img/medical-fund-banner.jpg')" }}>
+      <section className="relative bg-cover bg-center h-96" style={{ backgroundImage: "url('./img/medical-fund-banner.jpg')" }}>
         <div className="absolute inset-0 bg-black opacity-60"></div>
         <div className="relative z-10 flex flex-col items-center justify-center h-full text-white text-center">
           <h1 className="text-5xl font-extrabold" data-aos="fade-down">Athletes Medical Fund</h1>

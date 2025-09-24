@@ -9,7 +9,7 @@ const Footer: React.FC = () => {
         <div className="grid grid-cols-1 md:grid-cols-4 gap-8">
           <div className="space-y-4">
             <div className="flex items-center gap-3">
-               <img className="h-12 w-auto" src="/img/logo.png" alt="USRA Logo" />
+               <img className="h-12 w-auto" src="./img/logo.png" alt="USRA Logo" />
               <span className="text-white font-bold text-xl">USRA</span>
             </div>
             <p className="text-sm">Developing the future of rugby in Uganda through school sports excellence.</p>
@@ -33,9 +33,9 @@ const Footer: React.FC = () => {
           <div>
             <h3 className="text-sm font-semibold text-gray-400 tracking-wider uppercase">Resources</h3>
             <ul className="mt-4 space-y-2">
-              <li><a href="/docs/tournament-manual.pdf" target="_blank" rel="noopener noreferrer" className="text-base text-gray-300 hover:text-white">Tournament Manual</a></li>
-              <li><a href="/docs/accountability-form.pdf" target="_blank" rel="noopener noreferrer" className="text-base text-gray-300 hover:text-white">Accountability Form</a></li>
-              <li><a href="/docs/usra-constitution.pdf" target="_blank" rel="noopener noreferrer" className="text-base text-gray-300 hover:text-white">USRA Constitution</a></li>
+              <li><a href="./docs/tournament-manual.pdf" target="_blank" rel="noopener noreferrer" className="text-base text-gray-300 hover:text-white">Tournament Manual</a></li>
+              <li><a href="./docs/accountability-form.pdf" target="_blank" rel="noopener noreferrer" className="text-base text-gray-300 hover:text-white">Accountability Form</a></li>
+              <li><a href="./docs/usra-constitution.pdf" target="_blank" rel="noopener noreferrer" className="text-base text-gray-300 hover:text-white">USRA Constitution</a></li>
                <li><Link to="/medical-fund" className="text-base text-gray-300 hover:text-white">Athletes Medical Fund</Link></li>
             </ul>
           </div>

@@ -18,10 +18,8 @@ declare const AOS: any;
 
 // Global Error Boundary Component
 class ErrorBoundary extends React.Component<{ children: React.ReactNode }, { hasError: boolean; error?: Error }> {
-  constructor(props: { children: React.ReactNode }) {
-    super(props);
-    this.state = { hasError: false };
-  }
+  // FIX: Replaced constructor with a state property initializer for modern syntax and to resolve type errors.
+  state = { hasError: false };
 
   static getDerivedStateFromError(error: Error): { hasError: boolean } {
     return { hasError: true };
