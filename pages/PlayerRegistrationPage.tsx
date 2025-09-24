@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate, useParams, Link } from 'react-router-dom';
 import { supabase, AppConstants } from '../lib/supabase';
 import FileUploadInput from '../components/FileUploadInput';
@@ -10,6 +10,7 @@ const PlayerRegistrationPage: React.FC = () => {
     const [playerName, setPlayerName] = useState('');
     const [dateOfBirth, setDateOfBirth] = useState('');
     const [age, setAge] = useState('');
+    const [gender, setGender] = useState('');
     const [nextOfKinContact, setNextOfKinContact] = useState('');
     const [nextOfKinRelationship, setNextOfKinRelationship] = useState('');
     const [lin, setLin] = useState('');
@@ -18,6 +19,20 @@ const PlayerRegistrationPage: React.FC = () => {
 
     const [isLoading, setIsLoading] = useState(false);
     const [error, setError] = useState<string | null>(null);
+
+    // Calculate age automatically from date of birth
+    useEffect(() => {
+        if (dateOfBirth) {
+            const birthDate = new Date(dateOfBirth);
+            const today = new Date();
+            let calculatedAge = today.getFullYear() - birthDate.getFullYear();
+            const m = today.getMonth() - birthDate.getMonth();
+            if (m < 0 || (m === 0 && today.getDate() < birthDate.getDate())) {
+                calculatedAge--;
+            }
+            setAge(calculatedAge.toString());
+        }
+    }, [dateOfBirth]);
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
@@ -42,6 +57,7 @@ const PlayerRegistrationPage: React.FC = () => {
                 player_name: playerName,
                 date_of_birth: dateOfBirth,
                 age: Number(age),
+                gender: gender,
                 next_of_kin_relationship: nextOfKinRelationship,
                 next_of_kin_contact: nextOfKinContact,
                 lin: lin,
@@ -89,8 +105,16 @@ const PlayerRegistrationPage: React.FC = () => {
                                     <input type="date" value={dateOfBirth} onChange={e => setDateOfBirth(e.target.value)} className="w-full p-3 border border-gray-300 rounded-md focus:outline-none focus:ring-1 focus:ring-primary-red" required/>
                                 </div>
                                 <div>
-                                    <label className="block text-gray-700 mb-2">Age *</label>
-                                    <input type="number" value={age} onChange={e => setAge(e.target.value)} placeholder="Age" className="w-full p-3 border border-gray-300 rounded-md focus:outline-none focus:ring-1 focus:ring-primary-red" required/>
+                                    <label className="block text-gray-700 mb-2">Age (auto-calculated)</label>
+                                    <input type="number" value={age} readOnly placeholder="Age" className="w-full p-3 border border-gray-300 rounded-md focus:outline-none focus:ring-1 focus:ring-primary-red bg-gray-100" />
+                                </div>
+                                <div>
+                                    <label className="block text-gray-700 mb-2">Gender *</label>
+                                    <select value={gender} onChange={e => setGender(e.target.value)} className="w-full p-3 border border-gray-300 rounded-md bg-white focus:outline-none focus:ring-1 focus:ring-primary-red" required>
+                                        <option value="">Select Gender</option>
+                                        <option value="Male">Male</option>
+                                        <option value="Female">Female</option>
+                                    </select>
                                 </div>
                                 <div>
                                     <label className="block text-gray-700 mb-2">Class *</label>
@@ -104,7 +128,7 @@ const PlayerRegistrationPage: React.FC = () => {
                                         <option>S6</option>
                                     </select>
                                 </div>
-                                <div className="md:col-span-2">
+                                <div>
                                     <label className="block text-gray-700 mb-2">Learner ID Number (LIN) *</label>
                                     <input type="text" value={lin} onChange={e => setLin(e.target.value)} placeholder="LIN" className="w-full p-3 border border-gray-300 rounded-md focus:outline-none focus:ring-1 focus:ring-primary-red" required/>
                                 </div>

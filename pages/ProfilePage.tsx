@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useMemo } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
 import { supabase } from '../lib/supabase';
 import { useAuth } from '../AuthContext';
@@ -27,8 +27,58 @@ interface PlayerData {
   age: number;
   player_class: string;
   lin: string;
+  gender: string;
   photo_path: string | null;
 }
+
+const getPublicUrl = (bucket: string, path: string | null) => {
+  if (!path) return null;
+  return supabase.storage.from(bucket).getPublicUrl(path).data.publicUrl;
+};
+
+const PlayerTable: React.FC<{ title: string; players: PlayerData[] }> = ({ title, players }) => {
+  return (
+    <div>
+      <h3 className="text-xl font-bold text-dark-gray mb-4">{title} ({players.length})</h3>
+      {players.length > 0 ? (
+        <div className="overflow-x-auto rounded-lg border border-gray-200">
+          <table className="min-w-full bg-white">
+            <thead className="bg-gray-100">
+              <tr>
+                <th className="py-3 px-4 border-b text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">Photo</th>
+                <th className="py-3 px-4 border-b text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">Player Name</th>
+                <th className="py-3 px-4 border-b text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">Age</th>
+                <th className="py-3 px-4 border-b text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">Class</th>
+                <th className="py-3 px-4 border-b text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">LIN</th>
+              </tr>
+            </thead>
+            <tbody className="text-gray-700">
+              {players.map(player => (
+                <tr key={player.id} className="hover:bg-gray-50">
+                  <td className="py-3 px-4 border-b">
+                    <img 
+                      src={getPublicUrl('player-photos', player.photo_path) || '/img/placeholder-player.png'} 
+                      alt={player.player_name} 
+                      className="w-12 h-12 object-cover rounded-full"
+                    />
+                  </td>
+                  <td className="py-3 px-4 border-b font-medium">{player.player_name}</td>
+                  <td className="py-3 px-4 border-b">{player.age}</td>
+                  <td className="py-3 px-4 border-b">{player.player_class}</td>
+                  <td className="py-3 px-4 border-b">{player.lin}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      ) : (
+        <div className="text-center py-8 px-4 bg-gray-100 rounded-lg">
+          <p className="text-gray-500">No players in this category.</p>
+        </div>
+      )}
+    </div>
+  );
+};
 
 const ProfilePage: React.FC = () => {
   const { schoolId } = useParams<{ schoolId: string }>();
@@ -36,6 +86,7 @@ const ProfilePage: React.FC = () => {
   const [players, setPlayers] = useState<PlayerData[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [activeTab, setActiveTab] = useState('boys');
   const { user, logout } = useAuth();
   const navigate = useNavigate();
 
@@ -53,7 +104,6 @@ const ProfilePage: React.FC = () => {
     const fetchData = async () => {
       setLoading(true);
       try {
-        // Fetch school data
         const { data: schoolResult, error: schoolError } = await supabase
           .from('schools')
           .select('*')
@@ -62,26 +112,19 @@ const ProfilePage: React.FC = () => {
           .single();
 
         if (schoolError) {
-          if (schoolError.code === 'PGRST116') {
-            throw new Error('No profile found or you do not have permission to view it.');
-          }
+          if (schoolError.code === 'PGRST116') throw new Error('No profile found or you do not have permission to view it.');
           throw schoolError;
         }
         setSchoolData(schoolResult);
 
-        // Fetch players data
         const { data: playersResult, error: playersError } = await supabase
             .from('players')
             .select('*')
             .eq('school_id', schoolId)
             .order('created_at', { ascending: false });
         
-        if (playersError) {
-            console.error("Failed to fetch players:", playersError);
-            // Non-critical error, so we don't block the page
-        } else {
-            setPlayers(playersResult || []);
-        }
+        if (playersError) console.error("Failed to fetch players:", playersError);
+        else setPlayers(playersResult || []);
 
       } catch (e: any) {
         setError(e.message || 'Failed to load profile data.');
@@ -93,6 +136,25 @@ const ProfilePage: React.FC = () => {
     
     fetchData();
   }, [schoolId, user, navigate]);
+
+  const categorizedPlayers = useMemo(() => {
+    const categories = {
+      boys: { u20: [] as PlayerData[], u17: [] as PlayerData[], u15: [] as PlayerData[] },
+      girls: { u20: [] as PlayerData[], u17: [] as PlayerData[], u15: [] as PlayerData[] },
+    };
+
+    players.forEach(player => {
+        const group = player.gender === 'Male' ? categories.boys : categories.girls;
+        if (player.age >= 17 && player.age < 20) {
+            group.u20.push(player);
+        } else if (player.age >= 15 && player.age < 17) {
+            group.u17.push(player);
+        } else if (player.age < 15) {
+            group.u15.push(player);
+        }
+    });
+    return categories;
+  }, [players]);
   
   const handleSignOut = async () => {
     try {
@@ -125,11 +187,6 @@ const ProfilePage: React.FC = () => {
       </div>
     );
   }
-
-  const getPublicUrl = (bucket: string, path: string | null) => {
-    if (!path) return null;
-    return supabase.storage.from(bucket).getPublicUrl(path).data.publicUrl;
-  };
 
   return (
     <div className="min-h-screen bg-light-gray pt-24 pb-12">
@@ -178,11 +235,10 @@ const ProfilePage: React.FC = () => {
         
         {/* Player Management Section */}
         <section className="mt-8 p-6 bg-gray-50 rounded-lg border border-gray-200">
-            <h2 className="text-2xl font-bold text-primary-red mb-4 flex items-center gap-3">
-                <i className="fas fa-users"></i>Player Management
-            </h2>
-            <div className="flex flex-col sm:flex-row items-center justify-between gap-4">
-                <p className="text-gray-600">Add new players to your school's official roster.</p>
+            <div className="flex flex-col sm:flex-row items-center justify-between gap-4 mb-6">
+                <h2 className="text-2xl font-bold text-primary-red flex items-center gap-3">
+                    <i className="fas fa-users"></i>Player Management
+                </h2>
                 <Link
                     to={`/player-registration/${schoolData.id}`}
                     className="bg-secondary-yellow text-white font-bold py-3 px-6 rounded-full hover:bg-dark-yellow transition duration-300 flex items-center gap-2 whitespace-nowrap"
@@ -190,48 +246,28 @@ const ProfilePage: React.FC = () => {
                     <i className="fas fa-user-plus"></i> Register New Player
                 </Link>
             </div>
+            
+            <div className="mb-4 border-b border-gray-200">
+                <nav className="-mb-px flex space-x-8" aria-label="Tabs">
+                    <button onClick={() => setActiveTab('boys')} className={`${activeTab === 'boys' ? 'border-primary-red text-primary-red' : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'} whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm transition-colors`}>
+                        Boys Teams
+                    </button>
+                    <button onClick={() => setActiveTab('girls')} className={`${activeTab === 'girls' ? 'border-primary-red text-primary-red' : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'} whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm transition-colors`}>
+                        Girls Teams
+                    </button>
+                </nav>
+            </div>
 
-            {/* Registered Players Roster */}
-            <div className="mt-8">
-              <h3 className="text-xl font-bold text-dark-gray mb-4">Registered Players Roster</h3>
-              {players.length > 0 ? (
-                <div className="overflow-x-auto rounded-lg border border-gray-200">
-                  <table className="min-w-full bg-white">
-                    <thead className="bg-gray-100">
-                      <tr>
-                        <th className="py-3 px-4 border-b text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">Photo</th>
-                        <th className="py-3 px-4 border-b text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">Player Name</th>
-                        <th className="py-3 px-4 border-b text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">Age</th>
-                        <th className="py-3 px-4 border-b text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">Class</th>
-                        <th className="py-3 px-4 border-b text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">LIN</th>
-                      </tr>
-                    </thead>
-                    <tbody className="text-gray-700">
-                      {players.map(player => (
-                        <tr key={player.id} className="hover:bg-gray-50">
-                          <td className="py-3 px-4 border-b">
-                            <img 
-                              src={getPublicUrl('player-photos', player.photo_path) || '/img/placeholder-player.png'} 
-                              alt={player.player_name} 
-                              className="w-12 h-12 object-cover rounded-full"
-                            />
-                          </td>
-                          <td className="py-3 px-4 border-b font-medium">{player.player_name}</td>
-                          <td className="py-3 px-4 border-b">{player.age}</td>
-                          <td className="py-3 px-4 border-b">{player.player_class}</td>
-                          <td className="py-3 px-4 border-b">{player.lin}</td>
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
-                </div>
-              ) : (
-                <div className="text-center py-8 px-4 bg-gray-100 rounded-lg">
-                  <i className="fas fa-users-slash text-4xl text-gray-400 mb-3"></i>
-                  <p className="text-gray-500">No players have been registered for this school yet.</p>
-                  <p className="text-sm text-gray-400">Use the button above to add the first player.</p>
-                </div>
-              )}
+            <div className={activeTab === 'boys' ? 'space-y-8' : 'hidden'}>
+                <PlayerTable title="Under 20 Boys" players={categorizedPlayers.boys.u20} />
+                <PlayerTable title="Under 17 Boys" players={categorizedPlayers.boys.u17} />
+                <PlayerTable title="Under 15 Boys" players={categorizedPlayers.boys.u15} />
+            </div>
+
+            <div className={activeTab === 'girls' ? 'space-y-8' : 'hidden'}>
+                <PlayerTable title="Under 20 Girls" players={categorizedPlayers.girls.u20} />
+                <PlayerTable title="Under 17 Girls" players={categorizedPlayers.girls.u17} />
+                <PlayerTable title="Under 15 Girls" players={categorizedPlayers.girls.u15} />
             </div>
         </section>
 
