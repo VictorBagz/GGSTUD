@@ -1,3 +1,4 @@
+
 import { createClient } from '@supabase/supabase-js';
 
 // The user has provided these keys to fix the initialization error.

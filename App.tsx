@@ -1,3 +1,4 @@
+
 import React, { useEffect, Suspense, lazy } from 'react';
 import { HashRouter, Routes, Route, useLocation } from 'react-router-dom';
 import HomePage from './pages/HomePage';
@@ -18,8 +19,11 @@ declare const AOS: any;
 
 // Global Error Boundary Component
 class ErrorBoundary extends React.Component<{ children: React.ReactNode }, { hasError: boolean; error?: Error }> {
-  // FIX: Replaced constructor with a state property initializer for modern syntax and to resolve type errors.
-  state = { hasError: false };
+  // FIX: Reinstated the constructor to explicitly handle props and state. This can resolve subtle type inference issues.
+  constructor(props: { children: React.ReactNode }) {
+    super(props);
+    this.state = { hasError: false };
+  }
 
   static getDerivedStateFromError(error: Error): { hasError: boolean } {
     return { hasError: true };
@@ -80,7 +84,7 @@ const App: React.FC = () => {
       <AuthProvider>
         <HashRouter>
           <ScrollToTop />
-          <div className="bg-light-gray text-text-dark font-sans">
+          <div className="bg-light-gray text-text-dark font-sans overflow-x-hidden">
             <Navbar />
             <main>
               <Suspense fallback={

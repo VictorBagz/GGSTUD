@@ -1,3 +1,4 @@
+
 import { Committee, RegionalCommittee, Event, EventCategory, EventTimeline } from './types';
 
 export const leadershipData: (Committee | RegionalCommittee)[] = [
